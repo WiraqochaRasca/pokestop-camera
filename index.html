@@ -1,502 +1,2803 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ポケストカメラ</title>
-<meta name="theme-color" content="#181f26">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="ポケストカメラ">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
-<style>
-:root {
-  --bg: #111820;
-  --card: #18212b;
-  --surface: #222c37;
-  --surface2: #2b3644;
-  --text: #f5f7fa;
-  --muted: #aab5c2;
-  --border: #3d4b5a;
-  --orange: #d45228;
-  --orange2: #ff8a4c;
-  --guide-opacity: 1;
-  --digital-zoom: 1;
-  --frame-aspect: 4 / 3;
-  --filter: none;
-}
-* { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-body { overscroll-behavior: none; }
-button, input, select { font: inherit; }
-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; }
-.logo { display:flex; align-items:center; gap:8px; font-weight:800; letter-spacing:.03em; }
-.logo-dot { width:14px; height:14px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 4px rgba(212,82,40,.16); }
-.header-controls { display:flex; align-items:center; gap:8px; }
-.icon { width:20px; height:20px; fill:currentColor; }
-.grid-btn, .mode-btn { border:1px solid var(--border); background:var(--surface); color:var(--text); border-radius:8px; min-width:42px; min-height:38px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
-.mode-switch, .shooting-mode-switch, .details-mode-switch { display:flex; gap:8px; }
-.mode-btn.active { border-color:var(--orange); background:rgba(212,82,40,.16); color:var(--orange2); }
-main { display:flex; justify-content:center; padding:0 12px 20px; }
-.card { width:100%; max-width:640px; background:var(--card); border:1px solid rgba(255,255,255,.08); border-radius:14px; overflow:hidden; box-shadow:0 12px 36px rgba(0,0,0,.22); }
-.stage { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:14px; min-height:260px; }
-.frame-wrap { position:relative; width:min(100%, 600px); display:flex; justify-content:center; align-items:center; }
-.holder { position:relative; width:100%; max-width:600px; aspect-ratio:var(--frame-aspect); background:#0b1016; border-radius:8px; overflow:hidden; box-shadow:0 0 0 1px rgba(255,255,255,.08), inset 0 0 0 1px rgba(255,255,255,.04); touch-action:manipulation; }
-.holder img, .camera-video { width:100%; height:100%; object-fit:cover; transform:scale(var(--digital-zoom)); transform-origin:center; filter:var(--filter); image-orientation:from-image; display:block; }
-.camera-video { display:none; background:#000; }
-body.camera-on .camera-video { display:block; }
-body.camera-on .holder > img { display:none; }
-.empty { position:absolute; inset:0; display:grid; place-items:center; gap:8px; color:var(--muted); text-align:center; font-size:13px; pointer-events:none; }
-body.camera-on .empty, body.has-image .empty { display:none; }
-.ring { position:absolute; pointer-events:none; border:2px solid rgba(255,255,255,.16); border-radius:50%; opacity:var(--guide-opacity); display:none; }
-.ring-1 { width:86%; height:86%; }
-.ring-2 { width:96%; height:96%; }
-body.mode-disk .ring { display:block; }
-body.mode-gift .ring { display:none; }
-.inner-disk-guide { position:absolute; inset:9%; border:2px solid rgba(255,255,255,.4); border-radius:4px; pointer-events:none; opacity:calc(var(--guide-opacity) * .85); display:none; }
-body.mode-gift .inner-disk-guide { display:block; }
-.camera-guide { position:absolute; inset:0; pointer-events:none; opacity:var(--guide-opacity); }
-.guide-line { position:absolute; background:rgba(255,255,255,.36); }
-.guide-line-v { top:0; bottom:0; left:50%; width:1px; transform:translateX(-.5px); }
-.guide-line-h { left:0; right:0; top:50%; height:1px; transform:translateY(-.5px); }
-.grid-overlay { position:absolute; inset:0; pointer-events:none; display:none; }
-body.grid-3x3 #grid-3x3, body.grid-center #grid-center { display:block; }
-#grid-3x3 .line { position:absolute; background:rgba(255,255,255,.34); }
-#grid-3x3 .v1 { left:33.333%; top:0; bottom:0; width:1px; }
-#grid-3x3 .v2 { left:66.666%; top:0; bottom:0; width:1px; }
-#grid-3x3 .h1 { top:33.333%; left:0; right:0; height:1px; }
-#grid-3x3 .h2 { top:66.666%; left:0; right:0; height:1px; }
-.center-cross::before, .center-cross::after { content:""; position:absolute; background:rgba(255,255,255,.5); left:50%; top:50%; transform:translate(-50%,-50%); }
-.center-cross::before { width:52px; height:1px; }
-.center-cross::after { width:1px; height:52px; }
-.edge-mark { position:absolute; width:24px; height:24px; border-color:rgba(255,255,255,.45); border-style:solid; }
-.mark-t { top:8px; left:50%; transform:translateX(-50%); border-width:2px 0 0 0; }
-.mark-b { bottom:8px; left:50%; transform:translateX(-50%); border-width:0 0 2px 0; }
-.mark-l { left:8px; top:50%; transform:translateY(-50%); border-width:0 0 0 2px; }
-.mark-r { right:8px; top:50%; transform:translateY(-50%); border-width:0 2px 0 0; }
-.level-cross { position:absolute; left:50%; top:50%; width:86px; height:86px; transform:translate(-50%,-50%); opacity:.88; display:none; }
-body.level-on .level-cross { display:block; }
-.level-bar { position:absolute; left:50%; top:50%; background:rgba(255,255,255,.65); border-radius:2px; transform:translate(-50%,-50%); }
-.level-horizontal { width:74px; height:2px; }
-.level-vertical { width:2px; height:74px; }
-.level-center-dot { position:absolute; left:50%; top:50%; width:8px; height:8px; border-radius:50%; background:var(--orange2); transform:translate(-50%,-50%); }
-.level-ok .level-center-dot { background:#4ee28a; }
-.focus-marker { position:absolute; width:44px; height:44px; border:2px solid var(--orange2); border-radius:50%; left:50%; top:50%; transform:translate(-50%,-50%) scale(.7); opacity:0; pointer-events:none; }
-.focus-marker.show { animation:focus-pop .75s ease-out; }
-@keyframes focus-pop { 0%{opacity:0;transform:translate(-50%,-50%) scale(1.4)} 20%{opacity:1} 100%{opacity:0;transform:translate(-50%,-50%) scale(.7)} }
-.nav-btn { position:absolute; top:50%; transform:translateY(-50%); z-index:8; width:38px; height:54px; border:0; border-radius:10px; background:rgba(0,0,0,.32); color:#fff; font-size:30px; cursor:pointer; }
-.nav-btn:disabled { opacity:.18; cursor:default; }
-.prev { left:8px; } .next { right:8px; }
-.counter { margin-top:8px; min-height:18px; color:var(--muted); font-size:12px; text-align:center; }
-.dots { display:flex; justify-content:center; gap:6px; margin-top:6px; min-height:8px; }
-.dot { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.35); cursor:pointer; }
-.dot.active { background:var(--orange2); }
-.controls { border-top:1px solid var(--border); padding:14px; display:grid; gap:12px; }
-.thumbs { display:flex; flex-wrap:wrap; gap:6px; max-height:150px; overflow-y:auto; padding:2px; }
-.thumb { width:52px; height:52px; border-radius:5px; object-fit:cover; opacity:.55; border:2px solid transparent; cursor:pointer; }
-.thumb.active { opacity:1; border-color:var(--orange2); transform:scale(1.04); }
-.dropzone { border:2px dashed var(--border); border-radius:8px; padding:14px; text-align:center; background:rgba(255,255,255,.025); }
-.dropzone.drag-over { border-color:var(--orange2); background:rgba(212,82,40,.08); }
-.drop-label { display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; }
-input[type=file] { display:none; }
-.camera-actions, .shooting-tools, .image-management, .utility-actions { display:grid; gap:8px; grid-template-columns:1fr; }
-.camera-btn { border:1px solid var(--border); background:var(--surface); color:var(--text); padding:.8rem; border-radius:8px; cursor:pointer; }
-.camera-btn:active { transform:translateY(1px); }
-.camera-btn:disabled { opacity:.45; cursor:default; transform:none; }
-.camera-btn.primary { border-color:var(--orange); background:rgba(212,82,40,.18); }
-.camera-zoom-panel, .camera-controls { display:grid; gap:10px; padding:10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); }
-.zoom-label, .preset-row, .autosave-row, .adjustment-row { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
-.zoom-row { display:grid; grid-template-columns:auto 1fr auto auto; gap:8px; align-items:center; }
-.zoom-row input { width:100%; min-width:0; }
-.zoom-btn { min-width:44px; line-height:1; }
-.details-controls { gap:12px; }
-.details-controls summary { list-style:none; cursor:pointer; font-weight:700; padding:.25rem 0; }
-.details-controls summary::-webkit-details-marker { display:none; }
-.details-controls summary::after { content:'▼'; float:right; color:var(--muted); font-size:12px; margin-top:2px; }
-.details-controls[open] summary::after { content:'▲'; }
-.camera-controls label { display:grid; gap:4px; font-size:13px; }
-.camera-controls select, .camera-controls input { width:100%; }
-.setting-note, .camera-note { color:var(--muted); font-size:12px; line-height:1.5; margin:0; }
-.status-line { color:var(--muted); font-size:12px; min-height:18px; }
-.footer { display:flex; justify-content:space-between; align-items:center; padding:0 2px; color:var(--muted); font-size:11px; }
-.shooting-tools { display:none; }
-body.shooting-mode header,
-body.shooting-mode .thumbs,
-body.shooting-mode .dropzone,
-body.shooting-mode .image-management-details,
-body.shooting-mode .camera-controls,
-body.shooting-mode .footer,
-body.shooting-mode .nav-btn { display:none !important; }
-body.shooting-mode .shooting-tools { display:grid; order:3; }
-body.shooting-mode .shooting-mode-switch { display:flex; }
-body.shooting-mode .camera-actions { grid-template-columns:1fr !important; }
-body.shooting-mode #btn-shot { order:1; }
-body.shooting-mode #btn-camera { order:2; }
-body.shooting-mode #btn-shooting-mode { order:5; }
-body.shooting-mode main { padding:0; align-items:stretch; }
-body.shooting-mode .card { max-width:none; min-height:100svh; border-radius:0; }
-body.shooting-mode .stage { flex:1; justify-content:center; }
-body.shooting-mode .controls { padding:10px; }
-body.shooting-mode .holder { max-width:100%; }
-@media (min-width:520px) { .camera-actions { grid-template-columns:1fr 1fr 1fr; } .image-management { grid-template-columns:1fr 1fr; } .utility-actions { grid-template-columns:1fr 1fr; } }
-@media (min-width:768px) { main { padding:20px; } .holder { max-width:600px; } }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ポケストポスカ確認用</title>
+  <style>
+    :root {
+      --orange: #d45228;
+      --blue: #3a7ab5;
+      --bg: #181f26;
+      --panel: #1e2830;
+      --surface: #252f38;
+      --border: #2e3d4a;
+      --text: #e8edf2;
+      --muted: #607080;
+      --pokestop-blue: #30bef0;
+      --camera-aspect: 1 / 1;
+      --preview-brightness: 100%;
+      --preview-contrast: 100%;
+      --digital-zoom: 1;
+      --guide-opacity: 1;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, 'Helvetica Neue', 'Hiragino Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      padding: .7rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    body > header { display: none !important; }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .logo-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--orange);
+      border-radius: 50%;
+    }
+
+    .header-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .grid-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      padding: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all .15s;
+    }
+
+    .grid-btn.active {
+      color: var(--orange);
+      border-color: var(--orange);
+      background: rgba(212, 82, 40, 0.1);
+    }
+
+    .mode-switch {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .mode-btn {
+      background: none;
+      border: none;
+      border-right: 1px solid var(--border);
+      color: var(--muted);
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mode-btn:last-child { border-right: none; }
+    .mode-btn.active { background: var(--orange); color: #fff; }
+
+    .shooting-mode-switch {
+      display: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--surface);
+    }
+
+    .shooting-mode-switch .mode-btn {
+      flex: 1;
+      min-height: 44px;
+    }
+
+    .shooting-tools {
+      display: none;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .shooting-tools .shooting-mode-switch {
+      min-width: 0;
+    }
+
+    .shooting-tools .camera-btn {
+      white-space: nowrap;
+      padding: .65rem .75rem;
+      min-width: 72px;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      fill: currentColor;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      padding: 1rem;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 520px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .stage {
+      background: var(--pokestop-blue);
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      user-select: none;
+      touch-action: pan-y;
+      transition: background 0.3s;
+    }
+
+    .stage.drag-over {
+      outline: 2px dashed var(--orange);
+      outline-offset: -4px;
+    }
+
+    .nav-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 28px;
+      line-height: 1;
+      border-radius: 50%;
+      z-index: 10;
+      transition: background 0.2s;
+    }
+
+    .nav-btn { display: none !important; }
+    .nav-btn:hover:not(:disabled) { background: rgba(0, 0, 0, 0.4); }
+    .nav-btn:disabled { opacity: 0; cursor: default; }
+    .nav-btn.prev { left: 10px; }
+    .nav-btn.next { right: 10px; }
+
+    .frame-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .ring {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      transition: opacity .3s;
+    }
+
+    .ring-1 { width: 282px; height: 282px; border: 2.5px solid #fff; }
+    .ring-2 { width: 302px; height: 302px; border: 1px solid rgba(255,255,255,.3); }
+
+    /* 外側リングは●モード用。一番内側の●は inner-disk-guide で別表示する */
+    .mode-gift .ring { opacity: 0; }
+    .mode-disk .ring { opacity: 1; }
+
+    .holder {
+      width: 260px;
+      height: auto;
+      aspect-ratio: var(--camera-aspect);
+      overflow: hidden;
+      position: relative;
+      background: #000;
+      flex-shrink: 0;
+      transition: border-radius .3s, aspect-ratio .2s;
+      border: 3px solid #fff;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .mode-disk .holder { border-radius: 50%; }
+    .mode-gift .holder { border-radius: 0; }
+
+    .inner-disk-guide {
+      position: absolute;
+      inset: 0;
+      border: 3px solid #fff;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 5;
+      display: none;
+      box-shadow: 0 0 2px rgba(0,0,0,.35);
+    }
+
+    /* ■モード時も、ユーザー指定の一番内側の●枠だけ表示する */
+    .mode-gift .inner-disk-guide {
+      display: block;
+    }
+
+    .holder img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+      user-select: none;
+      z-index: 1;
+    }
+
+    .camera-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+      z-index: 0;
+      background: #000;
+      filter: brightness(var(--preview-brightness)) contrast(var(--preview-contrast));
+      transform: scale(var(--digital-zoom));
+      transform-origin: center center;
+    }
+
+    .holder.camera-on .camera-video { display: block; }
+    .holder.camera-on > img,
+    .holder.camera-on #emptyState { display: none !important; }
+
+    .grid-overlay {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      display: none;
+      z-index: 2;
+    }
+
+    .grid-3x3 { display: block; }
+    .grid-3x3 .line { position: absolute; background: rgba(255, 255, 255, 0.4); }
+    .grid-3x3 .v1 { left: 33.33%; top: 0; bottom: 0; width: 1px; }
+    .grid-3x3 .v2 { left: 66.66%; top: 0; bottom: 0; width: 1px; }
+    .grid-3x3 .h1 { top: 33.33%; left: 0; right: 0; height: 1px; }
+    .grid-3x3 .h2 { top: 66.66%; left: 0; right: 0; height: 1px; }
+
+    .grid-center { display: block; }
+    .grid-center .center-cross {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px;
+      height: 20px;
+    }
+
+    .grid-center .center-cross::before,
+    .grid-center .center-cross::after {
+      content: '';
+      position: absolute;
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .grid-center .center-cross::before { top: 50%; left: 0; width: 100%; height: 1px; }
+    .grid-center .center-cross::after { left: 50%; top: 0; height: 100%; width: 1px; }
+
+    .grid-center .edge-mark { position: absolute; background: rgba(255, 255, 255, 0.5); }
+    .grid-center .mark-t { top: 0; left: 50%; width: 1px; height: 8px; transform: translateX(-50%); }
+    .grid-center .mark-b { bottom: 0; left: 50%; width: 1px; height: 8px; transform: translateX(-50%); }
+    .grid-center .mark-l { left: 0; top: 50%; height: 1px; width: 8px; transform: translateY(-50%); }
+    .grid-center .mark-r { right: 0; top: 50%; height: 1px; width: 8px; transform: translateY(-50%); }
+
+    .empty {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: #fff;
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .camera-guide {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      pointer-events: none;
+      display: none;
+      opacity: var(--guide-opacity);
+      transition: opacity .12s;
+    }
+
+    .holder.camera-on .camera-guide { display: block; }
+
+    .guide-line {
+      position: absolute;
+      background: rgba(255, 255, 255, .32);
+      box-shadow: 0 0 1px rgba(0, 0, 0, .35);
+    }
+
+    .guide-line-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+    .guide-line-h { left: 0; right: 0; top: 50%; height: 1px; }
+
+    .guide-circle {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border: 1px solid rgba(255, 255, 255, .35);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 2px rgba(0, 0, 0, .7);
+    }
+
+    .guide-circle-outer { width: 78%; aspect-ratio: 1 / 1; }
+    .guide-circle-inner { width: 42%; aspect-ratio: 1 / 1; border-style: dashed; }
+
+    .level-cross {
+      position: absolute;
+      inset: 0;
+      transform: rotate(var(--level-roll-angle, 0deg));
+      transform-origin: center center;
+      transition: transform .04s linear;
+      will-change: transform;
+    }
+
+    .level-bar {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      background: rgba(255, 255, 255, .45);
+      box-shadow: 0 0 1px rgba(0, 0, 0, .35);
+      border-radius: 999px;
+      transform: translate(-50%, -50%);
+      transition: background .12s, box-shadow .12s;
+    }
+
+    .level-horizontal {
+      width: 78%;
+      height: 2px;
+    }
+
+    .level-vertical {
+      width: 2px;
+      height: 78%;
+    }
+
+    .level-cross.level-ok .level-bar {
+      background: rgba(120, 255, 150, .55);
+      box-shadow: 0 0 4px rgba(120, 255, 150, .18), 0 0 1px rgba(0, 0, 0, .28);
+    }
+
+    .level-center-dot {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .58);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 1px rgba(0, 0, 0, .35);
+    }
+
+    .level-cross.roll-ok .level-horizontal,
+    .level-cross.pitch-ok .level-vertical {
+      background: rgba(120, 255, 150, .55);
+      box-shadow: 0 0 4px rgba(120, 255, 150, .18), 0 0 1px rgba(0, 0, 0, .28);
+    }
+
+    .level-cross.level-ok .level-bar {
+      background: rgba(120, 255, 150, .55);
+      box-shadow: 0 0 4px rgba(120, 255, 150, .18), 0 0 1px rgba(0, 0, 0, .28);
+    }
+
+    .level-cross.level-ok .level-center-dot {
+      background: rgba(120, 255, 150, .98);
+    }
+
+    .level-pitch-bubble {
+      position: absolute;
+      left: 50%;
+      top: calc(50% + var(--level-pitch-offset, 0px));
+      width: 14px;
+      height: 14px;
+      border: 1px solid rgba(255, 255, 255, .55);
+      border-radius: 50%;
+      background: rgba(255, 255, 255, .08);
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 2px rgba(0, 0, 0, .28);
+      transition: top .04s linear, background .12s, border-color .12s, box-shadow .12s;
+    }
+
+    .level-cross.pitch-ok .level-pitch-bubble,
+    .level-cross.level-ok .level-pitch-bubble {
+      border-color: rgba(120, 255, 150, .58);
+      background: rgba(120, 255, 150, .32);
+      box-shadow: 0 0 5px rgba(120, 255, 150, .18), 0 0 1px rgba(0, 0, 0, .25);
+    }
+
+    .focus-marker {
+      position: absolute;
+      width: 64px;
+      height: 64px;
+      border: 2px solid rgba(255, 255, 255, .95);
+      border-radius: 50%;
+      z-index: 6;
+      pointer-events: none;
+      transform: translate(-50%, -50%) scale(.8);
+      opacity: 0;
+      box-shadow: 0 0 2px rgba(0, 0, 0, .28);
+    }
+
+    .focus-marker.show { animation: focus-pop .75s ease-out; }
+
+    @keyframes focus-pop {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(1.35); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(.85); }
+    }
+
+    .counter {
+      margin-top: 1rem;
+      font-size: 12px;
+      color: #fff;
+      letter-spacing: 1px;
+      min-height: 16px;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    }
+
+    .dots {
+      display: flex;
+      gap: 6px;
+      margin-top: .5rem;
+      min-height: 10px;
+    }
+
+    .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.4);
+      cursor: pointer;
+      transition: background .15s;
+    }
+
+    .dot.active { background: #fff; }
+
+    .controls {
+      border-top: 1px solid var(--border);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .thumbs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      min-height: 0;
+      max-height: 150px;
+      overflow-y: auto;
+      padding: 2px;
+    }
+
+    .thumb {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border: 2px solid transparent;
+      cursor: pointer;
+      opacity: .5;
+      transition: all .15s;
+      border-radius: 4px;
+    }
+
+    .thumb.active { border-color: var(--orange); opacity: 1; transform: scale(1.05); }
+    .thumb:hover { opacity: .85; }
+
+    .dropzone {
+      border: 2px dashed var(--border);
+      padding: 1.25rem;
+      border-radius: 6px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .2s;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .dropzone:hover,
+    .dropzone.drag-over {
+      border-color: var(--orange);
+      background: rgba(212, 82, 40, 0.05);
+    }
+
+    .drop-label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    input[type="file"] { display: none; }
+
+    .camera-actions {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .camera-btn {
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      padding: .8rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .camera-btn:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    .details-controls {
+      gap: 12px;
+    }
+
+    .details-controls summary {
+      list-style: none;
+      cursor: pointer;
+      font-weight: 700;
+      padding: .25rem 0;
+    }
+
+    .details-controls summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .details-mode-switch {
+      width: 100%;
+    }
+
+    .details-mode-switch .mode-btn {
+      flex: 1;
+      min-height: 42px;
+    }
+
+    .details-controls summary::after {
+      content: '▼';
+      float: right;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .details-controls[open] summary::after {
+      content: '▲';
+    }
+
+    .image-management-details .image-management {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .camera-controls {
+      display: grid;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      font-size: 14px;
+    }
+
+    .camera-controls label { display: grid; gap: 4px; }
+    .camera-controls input,
+    .camera-controls select { width: 100%; }
+
+    .adjustment-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .adjustment-mode {
+      min-height: 34px;
+    }
+
+    .preset-row,
+    .autosave-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .preset-row select,
+    .autosave-row select {
+      min-height: 34px;
+    }
+
+    .ai-scene-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 0 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+
+
+    .camera-zoom-panel {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      font-size: 14px;
+    }
+
+    .zoom-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+    }
+
+    .zoom-row {
+      display: grid;
+      grid-template-columns: auto 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .zoom-row input[type="range"] {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .zoom-btn {
+      min-width: 44px;
+      padding: .65rem .75rem;
+      line-height: 1;
+    }
+
+    .utility-actions,
+    .image-management {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    @media (min-width: 520px) {
+      .utility-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .image-management {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    body.shooting-mode header,
+    body.shooting-mode .thumbs,
+    body.shooting-mode .image-management,
+    body.shooting-mode .dropzone,
+    body.shooting-mode .camera-controls,
+    body.shooting-mode .footer,
+    body.shooting-mode .nav-btn {
+      display: none !important;
+    }
+
+    body.shooting-mode .shooting-tools {
+      display: grid;
+    }
+
+    body.shooting-mode .shooting-mode-switch {
+      display: flex;
+    }
+
+    body.shooting-mode .camera-actions {
+      grid-template-columns: 1fr !important;
+    }
+
+    body.shooting-mode #btn-shot {
+      order: 1;
+    }
+
+    body.shooting-mode #btn-camera {
+      order: 2;
+    }
+
+    body.shooting-mode #btn-save {
+      display: none !important;
+    }
+
+
+    body.shooting-mode #btn-shooting-mode {
+      order: 5;
+    }
+
+    body.shooting-mode .shooting-tools {
+      order: 3;
+    }
+
+    body.shooting-mode main {
+      padding: .5rem;
+      max-width: none;
+      align-items: stretch;
+    }
+
+    body.shooting-mode .card {
+      max-width: none;
+      min-height: 100vh;
+      border-radius: 0;
+    }
+
+    body.shooting-mode .stage {
+      flex: 1;
+      justify-content: center;
+    }
+
+    .setting-note {
+      opacity: .72;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    .camera-note {
+      margin: 0;
+      opacity: .75;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .footer {
+      padding: 0 0.2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    @media (min-width: 520px) {
+      .camera-actions { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (min-width: 768px) {
+      main {
+        padding: 2rem;
+        align-items: flex-start;
+      }
+
+      .card { max-width: 600px; }
+      .holder { width: 300px; }
+      .ring-1 { width: 322px; height: 322px; }
+      .ring-2 { width: 342px; height: 342px; }
+      .thumb { width: 56px; height: 56px; }
+      .camera-actions { grid-template-columns: 1fr 1fr 1fr; }
+    }
+  </style>
+
+  <meta name="theme-color" content="#181f26">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="ポケストカメラ">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
 </head>
 <body class="mode-disk">
+
 <header>
-  <div class="logo"><span class="logo-dot"></span>ポケストポスカ確認用</div>
+  <div class="logo">
+    <span class="logo-dot"></span>
+    ポケストポスカ確認用
+  </div>
   <div class="header-controls">
-    <button class="grid-btn" id="btn-grid-toggle" type="button" title="グリッド切替">▦</button>
-    <div class="mode-switch" aria-label="表示モード">
-      <button class="mode-btn active" id="btn-disk" type="button" title="●"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg></button>
-      <button class="mode-btn" id="btn-gift" type="button" title="■"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg></button>
+    <button class="grid-btn" id="btn-grid-toggle" title="グリッド切替">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="8" y1="3" x2="8" y2="21" />
+        <line x1="16" y1="3" x2="16" y2="21" />
+        <line x1="3" y1="8" x2="21" y2="8" />
+        <line x1="3" y1="16" x2="21" y2="16" />
+      </svg>
+    </button>
+    <div class="mode-switch">
+      <button class="mode-btn active" id="btn-disk" title="ディスクモード">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+      </button>
+      <button class="mode-btn" id="btn-gift" title="ギフトモード">
+        <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
+      </button>
     </div>
   </div>
 </header>
+
 <main>
   <div class="card">
     <div class="stage" id="stage">
-      <button class="nav-btn prev" id="btn-prev" type="button" disabled aria-label="前の画像">‹</button>
-      <button class="nav-btn next" id="btn-next" type="button" disabled aria-label="次の画像">›</button>
+      <button class="nav-btn prev" id="btn-prev" disabled aria-label="前の画像">&#8249;</button>
+      <button class="nav-btn next" id="btn-next" disabled aria-label="次の画像">&#8250;</button>
+
       <div class="frame-wrap">
         <div class="ring ring-2"></div>
         <div class="ring ring-1"></div>
+
         <div class="holder" id="holder">
           <video id="cameraVideo" class="camera-video" autoplay playsinline muted></video>
           <div class="inner-disk-guide" aria-hidden="true"></div>
+
           <div class="camera-guide" id="cameraGuide">
             <div class="guide-line guide-line-v"></div>
             <div class="guide-line guide-line-h"></div>
-            <div class="level-cross" id="levelCross"><div class="level-bar level-horizontal"></div><div class="level-bar level-vertical"></div><div class="level-center-dot"></div></div>
+            <div class="guide-circle guide-circle-outer"></div>
+            <div class="guide-circle guide-circle-inner"></div>
+            <div class="level-cross" id="levelCross">
+              <div class="level-bar level-horizontal"></div>
+              <div class="level-bar level-vertical"></div>
+              <div class="level-pitch-bubble" id="levelPitchBubble"></div>
+              <div class="level-center-dot"></div>
+            </div>
           </div>
+
           <div class="focus-marker" id="focusMarker"></div>
-          <div id="grid-3x3" class="grid-overlay"><div class="line v1"></div><div class="line v2"></div><div class="line h1"></div><div class="line h2"></div></div>
-          <div id="grid-center" class="grid-overlay"><div class="center-cross"></div><div class="edge-mark mark-t"></div><div class="edge-mark mark-b"></div><div class="edge-mark mark-l"></div><div class="edge-mark mark-r"></div></div>
-          <div class="empty" id="emptyState"><span>画像をドロップ<br>または下から選択</span></div>
+
+          <div id="grid-3x3" class="grid-overlay">
+            <div class="line v1"></div><div class="line v2"></div>
+            <div class="line h1"></div><div class="line h2"></div>
+          </div>
+
+          <div id="grid-center" class="grid-overlay">
+            <div class="center-cross"></div>
+            <div class="edge-mark mark-t"></div><div class="edge-mark mark-b"></div>
+            <div class="edge-mark mark-l"></div><div class="edge-mark mark-r"></div>
+          </div>
+
+          <div class="empty" id="emptyState">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="1.2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <span>画像をドロップ<br>または下から選択</span>
+          </div>
         </div>
       </div>
+
       <div class="counter" id="counter"></div>
       <div class="dots" id="dots"></div>
     </div>
+
     <div class="controls">
       <div class="thumbs" id="thumbs" hidden></div>
+
       <div class="camera-zoom-panel">
-        <label class="zoom-label"><span>ズーム</span><span id="zoomValue">1.0x</span></label>
+        <label class="zoom-label">
+          <span>ズーム</span>
+          <span id="zoomValue">1.0x</span>
+        </label>
+
         <div class="zoom-row">
-          <button class="camera-btn zoom-btn" id="btn-zoom-out" type="button">－</button>
-          <input type="range" id="zoomRange" min="1" max="4" step="0.1" value="1">
-          <button class="camera-btn zoom-btn" id="btn-zoom-in" type="button">＋</button>
-          <button class="camera-btn zoom-btn" id="btn-zoom-reset" type="button">1x</button>
+          <button class="camera-btn zoom-btn" id="btn-zoom-out" type="button" disabled>－</button>
+          <input type="range" id="zoomRange" min="1" max="4" step="0.1" value="1" disabled>
+          <button class="camera-btn zoom-btn" id="btn-zoom-in" type="button" disabled>＋</button>
+          <button class="camera-btn zoom-btn" id="btn-zoom-reset" type="button" disabled>1x</button>
         </div>
       </div>
+
       <div class="camera-actions">
-        <button class="camera-btn" id="btn-camera" type="button">カメラ起動</button>
+        <button class="camera-btn" id="btn-camera">📷 カメラ起動</button>
         <button class="camera-btn" id="btn-shooting-mode" type="button">撮影モード</button>
-        <button class="camera-btn primary" id="btn-shot" type="button" disabled>この枠で撮影</button>
+        <button class="camera-btn" id="btn-shot" disabled>この枠で撮影</button>
       </div>
+
       <div class="shooting-tools" aria-label="撮影モード用操作">
         <div class="shooting-mode-switch" aria-label="撮影モード用の枠切替">
-          <button class="mode-btn" id="btn-disk-shooting" type="button" title="●"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg></button>
-          <button class="mode-btn active" id="btn-gift-shooting" type="button" title="■"><svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg></button>
+          <button class="mode-btn active" id="btn-disk-shooting" type="button" title="ディスクモード">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+          </button>
+          <button class="mode-btn" id="btn-gift-shooting" type="button" title="ギフトモード">
+            <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
+          </button>
         </div>
         <button class="camera-btn" id="btn-save-all-shooting" type="button" disabled>全保存</button>
         <button class="camera-btn" id="btn-clear-all-shooting" type="button" disabled>全削除</button>
       </div>
+
       <div class="dropzone" id="dropzone">
-        <label class="drop-label" for="fileInput">画像を追加（複数可）</label>
+        <label class="drop-label" for="fileInput">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2.2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          画像を追加（複数可）
+        </label>
         <input type="file" id="fileInput" accept="image/*" multiple>
       </div>
+
       <details class="camera-controls details-controls image-management-details">
         <summary>画像管理</summary>
         <div class="image-management">
           <button class="camera-btn" id="btn-save" type="button" disabled>選択画像を保存/共有</button>
-          <button class="camera-btn" id="btn-rotate-left" type="button" disabled>左回転</button>
-          <button class="camera-btn" id="btn-rotate-right" type="button" disabled>右回転</button>
           <button class="camera-btn" id="btn-delete-current" type="button" disabled>選択画像を削除</button>
           <button class="camera-btn" id="btn-save-all" type="button" disabled>全保存</button>
           <button class="camera-btn" id="btn-clear-all" type="button" disabled>全削除</button>
         </div>
       </details>
-      <details class="camera-controls details-controls">
+
+      <details class="camera-controls details-controls" id="cameraControls">
         <summary>詳細設定</summary>
-        <label>表示モード
-          <div class="details-mode-switch">
-            <button class="mode-btn active" id="btn-disk-detail" type="button">●</button>
-            <button class="mode-btn" id="btn-gift-detail" type="button">■</button>
+
+        <label>
+          表示モード
+          <div class="mode-switch details-mode-switch" aria-label="詳細設定用の枠切替">
+            <button class="mode-btn active" id="btn-disk-details" type="button" title="ディスクモード">
+              <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>
+            </button>
+            <button class="mode-btn" id="btn-gift-details" type="button" title="ギフトモード">
+              <svg class="icon" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1.5"/></svg>
+            </button>
           </div>
         </label>
-        <label>アスペクト比
+
+        <label>
+          アスペクト比
           <select id="aspectSelect">
-            <option value="1/1">1:1 正方形</option>
-            <option value="4/3" selected>4:3 横</option>
-            <option value="3/4">3:4 縦</option>
-            <option value="16/9">16:9 横長</option>
-            <option value="9/16">9:16 縦長</option>
+            <option value="1:1">1:1 正方形</option>
+            <option value="4:3">4:3 横</option>
+            <option value="3:4">3:4 縦</option>
+            <option value="16:9">16:9 横長</option>
+            <option value="9:16">9:16 縦長</option>
           </select>
         </label>
-        <label>ガイド濃度 <span id="guideOpacityValue">100%</span>
-          <input type="range" id="guideOpacity" min="0" max="100" value="100">
+
+        <label>
+          ガイド濃度
+          <input type="range" id="guideOpacityRange" min="0" max="100" step="1" value="100">
+          <span id="guideOpacityValue">100%</span>
         </label>
-        <div class="preset-row"><label>補正プリセット<select id="presetSelect"><option value="normal">標準</option><option value="day">昼用</option><option value="sunset">夕方・黄み補正</option><option value="night">夜用</option><option value="indoor">室内・黄み補正</option><option value="softguide">ガイド薄め</option></select></label><button class="camera-btn" id="btn-apply-preset" type="button">適用</button></div>
-        <div class="utility-actions">
-          <button class="camera-btn" id="btn-level" type="button">水準器 ON/OFF</button>
-          <button class="camera-btn" id="btn-refocus" type="button">フォーカス再調整</button>
+
+        <div hidden>
+          <select id="presetSelect">
+            <option value="standard">標準</option>
+            <option value="daylight">昼用</option>
+            <option value="evening">夕方・黄み補正</option>
+            <option value="night">夜用</option>
+            <option value="indoor">室内・黄み補正</option>
+            <option value="thin-guide">ガイド薄め</option>
+          </select>
+          <button class="camera-btn" id="btn-apply-preset" type="button">適用</button>
+
+          <select id="aiSceneMode">
+            <option value="off" selected>OFF</option>
+            <option value="on">ON</option>
+          </select>
+          <span class="ai-scene-status" id="aiSceneStatus">OFF</span>
+
+          <select id="brightnessMode" class="adjustment-mode">
+            <option value="manual" selected>手動</option>
+            <option value="auto">自動</option>
+          </select>
+          <input type="range" id="brightnessRange" min="50" max="150" step="1" value="100">
+          <span id="brightnessValue">100%</span>
+
+          <select id="contrastMode" class="adjustment-mode">
+            <option value="manual" selected>手動</option>
+            <option value="auto">自動</option>
+          </select>
+          <input type="range" id="contrastRange" min="50" max="150" step="1" value="100">
+          <span id="contrastValue">100%</span>
+
+          <select id="whiteBalanceMode" class="adjustment-mode">
+            <option value="manual" selected>手動</option>
+            <option value="auto">自動</option>
+          </select>
+          <span id="whiteBalanceValue">0</span>
+          <input type="range" id="temperatureRange" min="-50" max="50" step="1" value="0">
+          <span id="temperatureValue">0</span>
+          <input type="range" id="tintRange" min="-50" max="50" step="1" value="0">
+          <span id="tintValue">0</span>
+
+          <select id="focusModeSelect" disabled>
+            <option value="continuous">自動</option>
+            <option value="manual">手動</option>
+          </select>
+          <input type="range" id="focusRange" min="0" max="1" step="0.01" value="0" disabled>
+          <input type="range" id="exposureRange" min="0" max="0" step="1" value="0" disabled>
+          <span id="exposureValue">非対応</span>
+          <button class="camera-btn" id="btn-refocus" disabled>フォーカス再調整</button>
+          <p class="camera-note" id="cameraSupportNote">カメラ起動後に対応機能を確認します。</p>
           <button class="camera-btn" id="btn-reset-settings" type="button">設定リセット</button>
         </div>
-        <p class="camera-note" id="cameraNote">カメラ起動後に対応機能を確認します。</p>
       </details>
-      <div class="footer"><span>PC: 矢印キーで切替 / スマホ: スワイプ</span><span id="versionText">v1.25-rotate-tools-full</span></div>
+
+      <canvas id="captureCanvas" hidden></canvas>
+
+      <div class="footer">
+        <span>PC: 矢印キーで切替 / スマホ: スワイプ</span>
+        <span>v1.21-image-management</span>
+      </div>
     </div>
   </div>
 </main>
+
 <script>
-(() => {
-'use strict';
-const VERSION = 'v1.25-rotate-tools-full';
-const $ = id => document.getElementById(id);
-const els = {
-  holder:$('holder'), video:$('cameraVideo'), fileInput:$('fileInput'), dropzone:$('dropzone'), thumbs:$('thumbs'), counter:$('counter'), dots:$('dots'),
-  prev:$('btn-prev'), next:$('btn-next'), camera:$('btn-camera'), shot:$('btn-shot'), shooting:$('btn-shooting-mode'), save:$('btn-save'), deleteCurrent:$('btn-delete-current'),
-  saveAll:$('btn-save-all'), clearAll:$('btn-clear-all'), saveAllShooting:$('btn-save-all-shooting'), clearAllShooting:$('btn-clear-all-shooting'),
-  rotateLeft:$('btn-rotate-left'), rotateRight:$('btn-rotate-right'), zoom:$('zoomRange'), zoomValue:$('zoomValue'), zoomOut:$('btn-zoom-out'), zoomIn:$('btn-zoom-in'), zoomReset:$('btn-zoom-reset'),
-  grid:$('btn-grid-toggle'), aspect:$('aspectSelect'), guideOpacity:$('guideOpacity'), guideOpacityValue:$('guideOpacityValue'), preset:$('presetSelect'), applyPreset:$('btn-apply-preset'),
-  level:$('btn-level'), refocus:$('btn-refocus'), reset:$('btn-reset-settings'), cameraNote:$('cameraNote'), focusMarker:$('focusMarker')
-};
-let items = [];
-let current = -1;
+let imgs = [];
+let current = 0;
+let gridState = 0;
+
 let cameraStream = null;
-let gridMode = 0;
-let touchStartX = 0;
-let levelEnabled = false;
-let wakeLock = null;
-const objectUrls = new Set();
-function activeItem(){ return items[current] || null; }
-function revokeItem(item){ if (item && item.url) { URL.revokeObjectURL(item.url); objectUrls.delete(item.url); } }
-function safeName(name, ext='jpg'){ return String(name || ('pscamera_' + Date.now() + '.' + ext)).replace(/[\\/:*?"<>|]+/g, '_'); }
-async function blobToFile(blob, name){ return new File([blob], safeName(name), { type: blob.type || 'image/jpeg', lastModified: Date.now() }); }
-function canvasToBlob(canvas, type='image/jpeg', quality=.95){ return new Promise(resolve => canvas.toBlob(resolve, type, quality)); }
-async function normalizeFile(file){
-  if (!file || !file.type || !file.type.startsWith('image/')) return null;
-  if (/image\/(gif|svg\+xml)/i.test(file.type)) return file;
-  if (!('createImageBitmap' in window)) return file;
-  try {
-    const bmp = await createImageBitmap(file, { imageOrientation:'from-image' });
-    const c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height;
-    const ctx = c.getContext('2d'); ctx.drawImage(bmp,0,0); if (bmp.close) bmp.close();
-    const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-    const blob = await canvasToBlob(c, type, .95);
-    if (!blob) return file;
-    return new File([blob], safeName(file.name, type.includes('png')?'png':'jpg'), { type, lastModified:file.lastModified || Date.now() });
-  } catch(e){ console.log('normalize skipped', e); return file; }
-}
-async function addFiles(fileList){
-  const files = Array.from(fileList || []);
-  for (const f of files) {
-    const file = await normalizeFile(f);
-    if (!file) continue;
-    const url = URL.createObjectURL(file); objectUrls.add(url);
-    items.push({ id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()+Math.random()), file, url, name:file.name });
+let cameraTrack = null;
+let cameraCapabilities = {};
+let lastCameraShotIndex = -1;
+
+let previewBrightness = 100;
+let previewContrast = 100;
+let previewTemperature = -8;
+let previewTint = 0;
+let presetBaseBrightness = 100;
+let presetBaseContrast = 100;
+let presetBaseTemperature = -8;
+let presetBaseTint = 0;
+let guideOpacity = 45;
+let currentZoom = 1;
+let hardwareZoomSupported = false;
+let minZoom = 1;
+let maxZoom = 4;
+let zoomStep = 0.1;
+let levelGuideStatus = '水準器: 固定表示';
+let levelGuideActive = false;
+let levelMotionActive = false;
+let levelOrientationActive = false;
+let lastMotionLevelAt = 0;
+let lastLevelRoll = 0;
+let autoAdjustTimer = null;
+const autoAdjustCanvas = document.createElement('canvas');
+const autoAdjustCtx = autoAdjustCanvas.getContext('2d', { willReadFrequently: true });
+
+const OUTPUT_SIZE = 3072;
+const SETTINGS_KEY = 'pokestopCameraSettings.v14-image-management';
+const PRESETS = {
+  standard: {
+    name: '標準',
+    brightnessMode: 'auto',
+    brightness: 100,
+    contrastMode: 'auto',
+    contrast: 100,
+    whiteBalanceMode: 'auto',
+    temperature: -8,
+    tint: 0,
+    guideOpacity: 100
+  },
+  daylight: {
+    name: '昼用',
+    brightnessMode: 'auto',
+    brightness: 100,
+    contrastMode: 'auto',
+    contrast: 100,
+    whiteBalanceMode: 'auto',
+    temperature: -8,
+    tint: 0,
+    guideOpacity: 100
+  },
+  evening: {
+    name: '夕方・黄み補正',
+    brightnessMode: 'auto',
+    brightness: 105,
+    contrastMode: 'auto',
+    contrast: 105,
+    whiteBalanceMode: 'auto',
+    temperature: -24,
+    tint: 0,
+    guideOpacity: 100
+  },
+  night: {
+    name: '夜用',
+    brightnessMode: 'auto',
+    brightness: 115,
+    contrastMode: 'auto',
+    contrast: 110,
+    whiteBalanceMode: 'auto',
+    temperature: -16,
+    tint: 0,
+    guideOpacity: 100
+  },
+  indoor: {
+    name: '室内・黄み補正',
+    brightnessMode: 'auto',
+    brightness: 105,
+    contrastMode: 'auto',
+    contrast: 105,
+    whiteBalanceMode: 'auto',
+    temperature: -28,
+    tint: 0,
+    guideOpacity: 100
+  },
+  'thin-guide': {
+    name: 'ガイド薄め',
+    brightnessMode: 'auto',
+    brightness: 100,
+    contrastMode: 'auto',
+    contrast: 100,
+    whiteBalanceMode: 'auto',
+    temperature: -8,
+    tint: 0,
+    guideOpacity: 25
   }
-  if (items.length && current < 0) current = 0;
-  if (items.length) current = Math.min(current < 0 ? 0 : current, items.length - 1);
-  render();
+};
+
+const body = document.body;
+const holder = document.getElementById('holder');
+const empty = document.getElementById('emptyState');
+const counterEl = document.getElementById('counter');
+const dotsEl = document.getElementById('dots');
+const thumbsEl = document.getElementById('thumbs');
+const stage = document.getElementById('stage');
+const btnPrev = document.getElementById('btn-prev');
+const btnNext = document.getElementById('btn-next');
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const btnDisk = document.getElementById('btn-disk');
+const btnGift = document.getElementById('btn-gift');
+const btnDiskShooting = document.getElementById('btn-disk-shooting');
+const btnGiftShooting = document.getElementById('btn-gift-shooting');
+const btnDiskDetails = document.getElementById('btn-disk-details');
+const btnGiftDetails = document.getElementById('btn-gift-details');
+const btnGrid = document.getElementById('btn-grid-toggle');
+
+const grid3x3 = document.getElementById('grid-3x3');
+const gridCenter = document.getElementById('grid-center');
+
+const cameraVideo = document.getElementById('cameraVideo');
+const btnCamera = document.getElementById('btn-camera');
+const btnShot = document.getElementById('btn-shot');
+const btnSave = document.getElementById('btn-save');
+const btnShootingMode = document.getElementById('btn-shooting-mode');
+const btnResetSettings = document.getElementById('btn-reset-settings');
+const btnDeleteCurrent = document.getElementById('btn-delete-current');
+const btnClearAll = document.getElementById('btn-clear-all');
+const btnSaveAll = document.getElementById('btn-save-all');
+const btnClearAllShooting = document.getElementById('btn-clear-all-shooting');
+const btnSaveAllShooting = document.getElementById('btn-save-all-shooting');
+const captureCanvas = document.getElementById('captureCanvas');
+
+const presetSelect = document.getElementById('presetSelect');
+const btnApplyPreset = document.getElementById('btn-apply-preset');
+const aiSceneMode = document.getElementById('aiSceneMode');
+const aiSceneStatus = document.getElementById('aiSceneStatus');
+
+const brightnessMode = document.getElementById('brightnessMode');
+const brightnessRange = document.getElementById('brightnessRange');
+const brightnessValue = document.getElementById('brightnessValue');
+const contrastMode = document.getElementById('contrastMode');
+const contrastRange = document.getElementById('contrastRange');
+const contrastValue = document.getElementById('contrastValue');
+const whiteBalanceMode = document.getElementById('whiteBalanceMode');
+const whiteBalanceValue = document.getElementById('whiteBalanceValue');
+const temperatureRange = document.getElementById('temperatureRange');
+const temperatureValue = document.getElementById('temperatureValue');
+const tintRange = document.getElementById('tintRange');
+const tintValue = document.getElementById('tintValue');
+const guideOpacityRange = document.getElementById('guideOpacityRange');
+const guideOpacityValue = document.getElementById('guideOpacityValue');
+const zoomRange = document.getElementById('zoomRange');
+const zoomValue = document.getElementById('zoomValue');
+const btnZoomOut = document.getElementById('btn-zoom-out');
+const btnZoomIn = document.getElementById('btn-zoom-in');
+const btnZoomReset = document.getElementById('btn-zoom-reset');
+const aspectSelect = document.getElementById('aspectSelect');
+const focusModeSelect = document.getElementById('focusModeSelect');
+const focusRange = document.getElementById('focusRange');
+const btnRefocus = document.getElementById('btn-refocus');
+const exposureRange = document.getElementById('exposureRange');
+const exposureValue = document.getElementById('exposureValue');
+const cameraSupportNote = document.getElementById('cameraSupportNote');
+const focusMarker = document.getElementById('focusMarker');
+const levelCross = document.getElementById('levelCross');
+const levelPitchBubble = document.getElementById('levelPitchBubble');
+
+
+function applySimpleCameraDefaults() {
+  if (aiSceneMode) aiSceneMode.value = 'off';
+
+  brightnessMode.value = 'manual';
+  brightnessRange.value = 100;
+  previewBrightness = 100;
+
+  contrastMode.value = 'manual';
+  contrastRange.value = 100;
+  previewContrast = 100;
+
+  whiteBalanceMode.value = 'manual';
+  temperatureRange.value = 0;
+  tintRange.value = 0;
+  previewTemperature = 0;
+  previewTint = 0;
+
+  syncPresetBaseFromControls();
+  updateWhiteBalanceLabels();
+  setPreviewFilter(100, 100);
+  setAiSceneStatus('OFF');
 }
-function setMode(mode){
-  document.body.classList.toggle('mode-disk', mode === 'disk');
-  document.body.classList.toggle('mode-gift', mode === 'gift');
-  ['btn-disk','btn-disk-shooting','btn-disk-detail'].forEach(id => $(id)?.classList.toggle('active', mode === 'disk'));
-  ['btn-gift','btn-gift-shooting','btn-gift-detail'].forEach(id => $(id)?.classList.toggle('active', mode === 'gift'));
+
+function setMode(mode) {
+  body.classList.remove('mode-disk', 'mode-gift');
+  body.classList.add('mode-' + mode);
+
+  btnDisk.classList.toggle('active', mode === 'disk');
+  btnGift.classList.toggle('active', mode === 'gift');
+
+  if (btnDiskShooting) btnDiskShooting.classList.toggle('active', mode === 'disk');
+  if (btnGiftShooting) btnGiftShooting.classList.toggle('active', mode === 'gift');
+  if (btnDiskDetails) btnDiskDetails.classList.toggle('active', mode === 'disk');
+  if (btnGiftDetails) btnGiftDetails.classList.toggle('active', mode === 'gift');
 }
-function setShooting(on){
-  document.body.classList.toggle('shooting-mode', !!on);
-  els.shooting.textContent = on ? '通常表示' : '撮影モード';
-  if (on) setMode('gift');
-  updateButtons();
-}
-function updateButtons(){
-  const has = items.length > 0, one = !!activeItem();
-  document.body.classList.toggle('has-image', has);
-  [els.save, els.deleteCurrent, els.rotateLeft, els.rotateRight].forEach(b => b.disabled = !one);
-  [els.saveAll, els.clearAll, els.saveAllShooting, els.clearAllShooting].forEach(b => b.disabled = !has);
-  els.prev.disabled = !has || current <= 0;
-  els.next.disabled = !has || current >= items.length - 1;
-  els.thumbs.hidden = !has;
-  els.shot.disabled = !cameraStream;
-}
-function renderMain(){
-  els.holder.querySelectorAll('img.preview-image').forEach(n => n.remove());
-  const item = activeItem();
-  if (item && !cameraStream) {
-    const img = document.createElement('img');
-    img.className = 'preview-image'; img.alt = item.name || 'image'; img.src = item.url;
-    els.holder.insertBefore(img, els.holder.firstChild);
+
+function render() {
+  const old = holder.querySelector('img');
+  if (old) old.remove();
+
+  empty.style.display = imgs.length ? 'none' : 'flex';
+
+  if (!imgs.length) {
+    current = 0;
+    counterEl.textContent = '';
+    dotsEl.innerHTML = '';
+    thumbsEl.innerHTML = '';
+    btnPrev.disabled = true;
+    btnNext.disabled = true;
+    btnSave.disabled = true;
+    if (btnDeleteCurrent) btnDeleteCurrent.disabled = true;
+    if (btnClearAll) btnClearAll.disabled = true;
+    if (btnSaveAll) btnSaveAll.disabled = true;
+    if (btnClearAllShooting) btnClearAllShooting.disabled = true;
+    if (btnSaveAllShooting) btnSaveAllShooting.disabled = true;
+    return;
   }
-  els.counter.textContent = items.length ? `${current + 1} / ${items.length}` : '';
-}
-function renderThumbs(){
-  els.thumbs.innerHTML = '';
-  items.forEach((item, i) => {
-    const img = document.createElement('img'); img.className = 'thumb' + (i === current ? ' active' : ''); img.src = item.url; img.alt = item.name || '';
-    img.addEventListener('click', () => { current = i; render(); });
-    els.thumbs.appendChild(img);
+
+  current = Math.max(0, Math.min(current, imgs.length - 1));
+
+  const img = document.createElement('img');
+  img.src = imgs[current].src;
+  holder.appendChild(img);
+
+  counterEl.textContent = `${current + 1} / ${imgs.length}`;
+
+  dotsEl.innerHTML = '';
+  imgs.forEach((_, index) => {
+    const dot = document.createElement('div');
+    dot.className = 'dot' + (index === current ? ' active' : '');
+    dot.onclick = () => {
+      current = index;
+      render();
+    };
+    dotsEl.appendChild(dot);
   });
-  els.dots.innerHTML = '';
-  items.forEach((_, i) => {
-    const d = document.createElement('div'); d.className = 'dot' + (i === current ? ' active' : ''); d.addEventListener('click', () => { current = i; render(); }); els.dots.appendChild(d);
+
+  thumbsEl.innerHTML = '';
+  imgs.forEach((item, index) => {
+    const thumb = document.createElement('img');
+    thumb.src = item.src;
+    thumb.className = 'thumb' + (index === current ? ' active' : '');
+    thumb.onclick = () => {
+      current = index;
+      render();
+    };
+    thumbsEl.appendChild(thumb);
   });
+
+  btnPrev.disabled = current === 0;
+  btnNext.disabled = current === imgs.length - 1;
+  btnSave.disabled = false;
+  if (btnDeleteCurrent) btnDeleteCurrent.disabled = imgs.length === 0;
+  if (btnClearAll) btnClearAll.disabled = imgs.length === 0;
+  if (btnSaveAll) btnSaveAll.disabled = imgs.length === 0;
+  if (btnClearAllShooting) btnClearAllShooting.disabled = imgs.length === 0;
+  if (btnSaveAllShooting) btnSaveAllShooting.disabled = imgs.length === 0;
 }
-function render(){ renderMain(); renderThumbs(); updateButtons(); }
-function go(delta){ if (!items.length) return; current = Math.max(0, Math.min(items.length - 1, current + delta)); render(); }
-async function saveFile(file){
-  if (!file) return;
-  if (navigator.canShare && navigator.canShare({ files:[file] })) {
-    try { await navigator.share({ files:[file], title:file.name }); return; } catch(e) { if (e && e.name === 'AbortError') return; }
+
+function go(direction) {
+  const next = current + direction;
+  if (next >= 0 && next < imgs.length) {
+    current = next;
+    render();
   }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = safeName(file.name); document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
-async function saveAll(){
-  const files = items.map(x => x.file).filter(Boolean);
+
+function load(fileList) {
+  const files = Array.from(fileList).filter(file => file.type.startsWith('image/'));
   if (!files.length) return;
-  if (navigator.canShare && navigator.canShare({ files })) { try { await navigator.share({ files, title:'pscamera images' }); return; } catch(e) { if (e && e.name === 'AbortError') return; } }
-  for (let i=0; i<files.length; i++) setTimeout(() => saveFile(files[i]), i * 350);
+
+  let loaded = 0;
+  const start = imgs.length;
+
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = event => {
+      imgs.push({ src: event.target.result });
+      loaded += 1;
+
+      if (loaded === files.length) {
+        current = start;
+        render();
+      }
+    };
+    reader.readAsDataURL(file);
+  });
 }
-function deleteCurrent(){
-  if (!activeItem()) return;
-  revokeItem(activeItem());
-  items.splice(current, 1);
-  if (!items.length) current = -1; else current = Math.max(0, Math.min(current, items.length - 1));
-  render();
+
+function getAspectRatioParts() {
+  const [w, h] = aspectSelect.value.split(':').map(Number);
+  return { w, h, ratio: w / h };
 }
-function clearAll(keepShooting=false){
-  items.forEach(revokeItem); items = []; current = -1; render();
-  if (keepShooting) setShooting(true);
+
+function getOutputSizeByAspect() {
+  const { w, h } = getAspectRatioParts();
+
+  if (w === h) {
+    return { width: OUTPUT_SIZE, height: OUTPUT_SIZE };
+  }
+
+  if (w > h) {
+    return {
+      width: OUTPUT_SIZE,
+      height: Math.round(OUTPUT_SIZE * h / w)
+    };
+  }
+
+  return {
+    width: Math.round(OUTPUT_SIZE * w / h),
+    height: OUTPUT_SIZE
+  };
 }
-async function rotateCurrent(direction){
-  const item = activeItem(); if (!item) return;
-  const bmp = await createImageBitmap(item.file, { imageOrientation:'from-image' });
-  const c = document.createElement('canvas'); c.width = bmp.height; c.height = bmp.width;
-  const ctx = c.getContext('2d');
-  if (direction === 'left') { ctx.translate(0, c.height); ctx.rotate(-Math.PI / 2); }
-  else { ctx.translate(c.width, 0); ctx.rotate(Math.PI / 2); }
-  ctx.drawImage(bmp, 0, 0); if (bmp.close) bmp.close();
-  const blob = await canvasToBlob(c, item.file.type === 'image/png' ? 'image/png' : 'image/jpeg', .95);
-  if (!blob) return;
-  const base = item.name.replace(/\.[^.]+$/, ''); const ext = blob.type.includes('png') ? 'png' : 'jpg';
-  const file = await blobToFile(blob, `${base}_${direction === 'left' ? 'left' : 'right'}.${ext}`);
-  revokeItem(item);
-  item.file = file; item.name = file.name; item.url = URL.createObjectURL(file); objectUrls.add(item.url);
-  render();
+
+function applyPreviewAspect() {
+  const { w, h } = getAspectRatioParts();
+  holder.style.setProperty('--camera-aspect', `${w} / ${h}`);
 }
-function setZoom(v){
-  v = Math.max(1, Math.min(4, Number(v) || 1));
-  els.zoom.value = String(v.toFixed(1));
-  els.zoomValue.textContent = `${v.toFixed(1)}x`;
-  document.documentElement.style.setProperty('--digital-zoom', String(v));
+
+function clampValue(value, min, max) {
+  return Math.max(min, Math.min(max, value));
 }
-function setAspect(value){
-  const [w,h] = String(value).split('/').map(Number);
-  if (w && h) document.documentElement.style.setProperty('--frame-aspect', `${w} / ${h}`);
+
+
+function getAppSettings() {
+  return {
+    brightnessMode: brightnessMode.value,
+    brightness: Number(brightnessRange.value),
+    contrastMode: contrastMode.value,
+    contrast: Number(contrastRange.value),
+    whiteBalanceMode: whiteBalanceMode.value,
+    temperature: Number(temperatureRange.value),
+    tint: Number(tintRange.value),
+    guideOpacity: Number(guideOpacityRange.value),
+    aspect: aspectSelect.value,
+    zoom: Number(currentZoom) || 1,
+    aiSceneMode: aiSceneMode ? aiSceneMode.value : 'on'
+  };
 }
-function setGuideOpacity(v){
-  v = Math.max(0, Math.min(100, Number(v) || 0));
-  document.documentElement.style.setProperty('--guide-opacity', String(v / 100));
-  els.guideOpacityValue.textContent = `${Math.round(v)}%`;
-}
-function applyPreset(){
-  const p = els.preset.value;
-  const filters = { normal:'none', day:'brightness(1.04) contrast(1.05) saturate(1.04)', sunset:'brightness(1.03) contrast(1.04) saturate(.94) hue-rotate(-4deg)', night:'brightness(1.13) contrast(1.05) saturate(.92)', indoor:'brightness(1.06) contrast(1.03) saturate(.92) hue-rotate(-6deg)', softguide:'none' };
-  document.documentElement.style.setProperty('--filter', filters[p] || 'none');
-  if (p === 'softguide') { els.guideOpacity.value = '45'; setGuideOpacity(45); }
-}
-async function startCamera(){
-  if (cameraStream) { stopCamera(); return; }
+
+function saveSettings() {
   try {
-    const constraints = { video:{ facingMode:{ ideal:'environment' }, width:{ ideal:1920 }, height:{ ideal:1080 } }, audio:false };
-    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
-    els.video.srcObject = cameraStream;
-    await els.video.play();
-    document.body.classList.add('camera-on');
-    els.camera.textContent = '■ 停止';
-    els.cameraNote.textContent = 'カメラ起動中。横向きで保存画像が回転した場合は、画像管理の左回転/右回転で補正してください。';
-    updateButtons();
-    requestWakeLock();
-  } catch(e){ console.error(e); alert('カメラを起動できませんでした。ブラウザのカメラ許可を確認してください。'); }
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(getAppSettings()));
+  } catch (error) {
+    console.warn('settings save failed', error);
+  }
 }
-function stopCamera(){
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-  els.video.srcObject = null; document.body.classList.remove('camera-on'); els.camera.textContent = 'カメラ起動'; releaseWakeLock(); render();
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_KEY);
+    if (!raw) return;
+
+    const settings = JSON.parse(raw);
+
+    if (settings.brightnessMode) brightnessMode.value = settings.brightnessMode;
+    if (Number.isFinite(Number(settings.brightness))) brightnessRange.value = settings.brightness;
+
+    if (settings.contrastMode) contrastMode.value = settings.contrastMode;
+    if (Number.isFinite(Number(settings.contrast))) contrastRange.value = settings.contrast;
+
+    if (settings.whiteBalanceMode) whiteBalanceMode.value = settings.whiteBalanceMode;
+    if (Number.isFinite(Number(settings.temperature))) temperatureRange.value = settings.temperature;
+    if (Number.isFinite(Number(settings.tint))) tintRange.value = settings.tint;
+
+    if (Number.isFinite(Number(settings.guideOpacity))) guideOpacityRange.value = settings.guideOpacity;
+    if (settings.aspect) aspectSelect.value = settings.aspect;
+    if (Number.isFinite(Number(settings.zoom))) currentZoom = Number(settings.zoom);
+    if (aiSceneMode && settings.aiSceneMode) aiSceneMode.value = settings.aiSceneMode;
+  } catch (error) {
+    console.warn('settings load failed', error);
+  }
 }
-function getOutputSize(){
-  const [w,h] = String(els.aspect.value).split('/').map(Number);
-  const longSide = 1600;
-  if (!w || !h) return { width:1600, height:1200 };
-  return w >= h ? { width:longSide, height:Math.round(longSide*h/w) } : { width:Math.round(longSide*w/h), height:longSide };
+
+function resetSettings() {
+  try {
+    localStorage.removeItem(SETTINGS_KEY);
+  } catch (error) {
+    console.warn('settings reset failed', error);
+  }
+
+  brightnessMode.value = 'auto';
+  brightnessRange.value = 100;
+  contrastMode.value = 'auto';
+  contrastRange.value = 100;
+  whiteBalanceMode.value = 'auto';
+  temperatureRange.value = -8;
+  tintRange.value = 0;
+  guideOpacityRange.value = 100;
+  aspectSelect.value = '1:1';
+  currentZoom = minZoom || 1;
+  if (aiSceneMode) aiSceneMode.value = 'on';
+  setAiSceneStatus('待機中');
+  syncPresetBaseFromControls();
+
+  updateAdjustmentControlState();
+  updateWhiteBalanceControlState();
+  updateGuideOpacity();
+  applyPreviewAspect();
+  applyZoom(currentZoom);
+  saveSettings();
 }
-async function capture(){
-  if (!cameraStream || !els.video.videoWidth) return;
-  const outSize = getOutputSize();
-  const sourceW = els.video.videoWidth, sourceH = els.video.videoHeight;
-  const destAspect = outSize.width / outSize.height, sourceAspect = sourceW / sourceH;
-  let cropW, cropH;
-  if (sourceAspect > destAspect) { cropH = sourceH; cropW = cropH * destAspect; } else { cropW = sourceW; cropH = cropW / destAspect; }
-  const zoom = Math.max(1, Number(els.zoom.value) || 1);
-  cropW /= zoom; cropH /= zoom;
-  const sx = (sourceW - cropW) / 2, sy = (sourceH - cropH) / 2;
-  const c = document.createElement('canvas'); c.width = outSize.width; c.height = outSize.height;
-  const ctx = c.getContext('2d'); const filter = getComputedStyle(els.video).filter; if (filter && filter !== 'none') ctx.filter = filter;
-  ctx.drawImage(els.video, sx, sy, cropW, cropH, 0, 0, c.width, c.height);
-  ctx.filter = 'none';
-  const blob = await canvasToBlob(c, 'image/jpeg', .95);
-  if (!blob) return;
-  const d = new Date(); const pad = n => String(n).padStart(2,'0');
-  const name = `pscamera_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}_${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}.jpg`;
-  await addFiles([new File([blob], name, { type:'image/jpeg', lastModified:Date.now() })]);
-  els.shot.textContent = '撮影しました'; setTimeout(() => els.shot.textContent = 'この枠で撮影', 700);
+
+function syncPresetBaseFromControls() {
+  presetBaseBrightness = Number(brightnessRange.value) || 100;
+  presetBaseContrast = Number(contrastRange.value) || 100;
+  presetBaseTemperature = Number(temperatureRange.value) || 0;
+  presetBaseTint = Number(tintRange.value) || 0;
 }
-async function requestWakeLock(){ try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch(_){} }
-function releaseWakeLock(){ try { if (wakeLock) wakeLock.release(); } catch(_){} wakeLock = null; }
-async function refocus(){
-  const track = cameraStream && cameraStream.getVideoTracks()[0]; if (!track) return;
-  try { await track.applyConstraints({ advanced:[{ focusMode:'continuous' }] }); els.cameraNote.textContent = 'フォーカス再調整を試しました。'; } catch(e){ els.cameraNote.textContent = 'この端末ではフォーカス再調整に対応していない可能性があります。'; }
+
+function applyPreset(presetName) {
+  const preset = PRESETS[presetName];
+  if (!preset) return;
+
+  brightnessMode.value = preset.brightnessMode;
+  brightnessRange.value = preset.brightness;
+
+  contrastMode.value = preset.contrastMode;
+  contrastRange.value = preset.contrast;
+
+  whiteBalanceMode.value = preset.whiteBalanceMode;
+  temperatureRange.value = preset.temperature;
+  tintRange.value = preset.tint;
+
+  guideOpacityRange.value = preset.guideOpacity;
+  syncPresetBaseFromControls();
+
+  updateAdjustmentControlState();
+  updateWhiteBalanceControlState();
+  updateGuideOpacity();
+  saveSettings();
 }
-function flashFocus(x=50,y=50){ els.focusMarker.style.left = x + '%'; els.focusMarker.style.top = y + '%'; els.focusMarker.classList.remove('show'); void els.focusMarker.offsetWidth; els.focusMarker.classList.add('show'); }
-function resetSettings(){ setMode('disk'); setZoom(1); els.aspect.value='4/3'; setAspect('4/3'); els.guideOpacity.value='100'; setGuideOpacity(100); els.preset.value='normal'; applyPreset(); document.body.classList.remove('grid-3x3','grid-center','level-on','level-ok'); gridMode=0; levelEnabled=false; }
-function handleOrientation(e){
-  if (!levelEnabled) return;
-  const beta = e.beta || 0, gamma = e.gamma || 0;
-  const ok = Math.abs(beta) < 3 && Math.abs(gamma) < 3;
-  document.body.classList.toggle('level-ok', ok);
-  const cross = $('levelCross'); if (cross) cross.style.transform = `translate(-50%,-50%) rotate(${Math.max(-20, Math.min(20, gamma))}deg)`;
+
+function isAiSceneOn() {
+  return aiSceneMode && aiSceneMode.value === 'on';
 }
-async function toggleLevel(){
-  levelEnabled = !levelEnabled; document.body.classList.toggle('level-on', levelEnabled);
-  if (levelEnabled && typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') { try { await DeviceOrientationEvent.requestPermission(); } catch(_){} }
+
+function setAiSceneStatus(message) {
+  if (aiSceneStatus) {
+    aiSceneStatus.textContent = message || '待機中';
+  }
 }
-function registerServiceWorker(){ if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.warn)); }
-els.fileInput.addEventListener('change', e => addFiles(e.target.files));
-els.dropzone.addEventListener('dragover', e => { e.preventDefault(); els.dropzone.classList.add('drag-over'); });
-els.dropzone.addEventListener('dragleave', () => els.dropzone.classList.remove('drag-over'));
-els.dropzone.addEventListener('drop', e => { e.preventDefault(); els.dropzone.classList.remove('drag-over'); addFiles(e.dataTransfer.files); });
-els.prev.addEventListener('click', () => go(-1)); els.next.addEventListener('click', () => go(1));
-document.addEventListener('keydown', e => { if (e.key === 'ArrowLeft') go(-1); if (e.key === 'ArrowRight') go(1); });
-els.holder.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].clientX; }, { passive:true });
-els.holder.addEventListener('touchend', e => { const dx = e.changedTouches[0].clientX - touchStartX; if (Math.abs(dx) > 45) go(dx > 0 ? -1 : 1); }, { passive:true });
-els.holder.addEventListener('click', e => { const r = els.holder.getBoundingClientRect(); flashFocus(((e.clientX-r.left)/r.width)*100, ((e.clientY-r.top)/r.height)*100); });
-els.save.addEventListener('click', () => saveFile(activeItem()?.file)); els.saveAll.addEventListener('click', saveAll); els.saveAllShooting.addEventListener('click', saveAll);
-els.deleteCurrent.addEventListener('click', deleteCurrent); els.clearAll.addEventListener('click', () => clearAll(false)); els.clearAllShooting.addEventListener('click', () => clearAll(true));
-els.rotateLeft.addEventListener('click', () => rotateCurrent('left')); els.rotateRight.addEventListener('click', () => rotateCurrent('right'));
-els.camera.addEventListener('click', startCamera); els.shot.addEventListener('click', capture); els.shooting.addEventListener('click', () => setShooting(!document.body.classList.contains('shooting-mode')));
-['btn-disk','btn-disk-shooting','btn-disk-detail'].forEach(id => $(id).addEventListener('click', () => setMode('disk')));
-['btn-gift','btn-gift-shooting','btn-gift-detail'].forEach(id => $(id).addEventListener('click', () => setMode('gift')));
-els.zoom.addEventListener('input', e => setZoom(e.target.value)); els.zoomOut.addEventListener('click', () => setZoom(Number(els.zoom.value)-.1)); els.zoomIn.addEventListener('click', () => setZoom(Number(els.zoom.value)+.1)); els.zoomReset.addEventListener('click', () => setZoom(1));
-els.grid.addEventListener('click', () => { gridMode = (gridMode + 1) % 3; document.body.classList.toggle('grid-3x3', gridMode === 1); document.body.classList.toggle('grid-center', gridMode === 2); });
-els.aspect.addEventListener('change', e => setAspect(e.target.value)); els.guideOpacity.addEventListener('input', e => setGuideOpacity(e.target.value)); els.applyPreset.addEventListener('click', applyPreset);
-els.level.addEventListener('click', toggleLevel); els.refocus.addEventListener('click', refocus); els.reset.addEventListener('click', resetSettings); window.addEventListener('deviceorientation', handleOrientation);
-window.addEventListener('beforeunload', () => { items.forEach(revokeItem); stopCamera(); });
-$('versionText').textContent = VERSION;
-resetSettings(); registerServiceWorker(); render();
-})();
+
+function shouldRunAutoAdjustment() {
+  return isBrightnessAuto() || isContrastAuto() || isWhiteBalanceAuto() || isAiSceneOn();
+}
+
+function getAdjustmentBase() {
+  // 案2: AIシーン強化ONのときはプリセットの明るさ/色味補正を重ねず、AI判定を優先する。
+  // OFFのときだけプリセットをベース設定として使う。
+  if (isAiSceneOn()) {
+    return {
+      brightness: 100,
+      contrast: 100,
+      temperature: 0,
+      tint: 0
+    };
+  }
+
+  return {
+    brightness: presetBaseBrightness,
+    contrast: presetBaseContrast,
+    temperature: presetBaseTemperature,
+    tint: presetBaseTint
+  };
+}
+
+function isWhiteBalanceAuto() {
+  return whiteBalanceMode.value === 'auto';
+}
+
+function updateWhiteBalanceLabels() {
+  const temp = Number(temperatureRange.value);
+  const tint = Number(tintRange.value);
+
+  previewTemperature = temp;
+  previewTint = tint;
+
+  if (!isWhiteBalanceAuto()) {
+    presetBaseTemperature = temp;
+    presetBaseTint = tint;
+  }
+
+  if (isWhiteBalanceAuto()) {
+    whiteBalanceValue.textContent = `自動`;
+  } else {
+    whiteBalanceValue.textContent = temp < 0 ? `青め ${temp}` : temp > 0 ? `黄め +${temp}` : '0';
+  }
+
+  temperatureValue.textContent = temp < 0 ? `青め ${temp}` : temp > 0 ? `黄め +${temp}` : '0';
+  tintValue.textContent = tint < 0 ? `緑 ${tint}` : tint > 0 ? `赤紫 +${tint}` : '0';
+}
+
+function updateWhiteBalanceControlState() {
+  const auto = isWhiteBalanceAuto();
+  temperatureRange.disabled = auto;
+  tintRange.disabled = auto;
+  updateWhiteBalanceLabels();
+  saveSettings();
+}
+
+function updateGuideOpacity() {
+  guideOpacity = Number(guideOpacityRange.value);
+  guideOpacity = clampValue(guideOpacity, 0, 100);
+  guideOpacityValue.textContent = `${Math.round(guideOpacity)}%`;
+  holder.style.setProperty('--guide-opacity', String(guideOpacity / 100));
+  saveSettings();
+}
+
+function estimateWhiteBalanceFromVideo() {
+  if (!cameraStream || !cameraVideo.videoWidth || !autoAdjustCtx) return;
+
+  const sampleSize = 48;
+  autoAdjustCanvas.width = sampleSize;
+  autoAdjustCanvas.height = sampleSize;
+
+  try {
+    autoAdjustCtx.drawImage(cameraVideo, 0, 0, sampleSize, sampleSize);
+    const data = autoAdjustCtx.getImageData(0, 0, sampleSize, sampleSize).data;
+
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      const max = Math.max(data[i], data[i + 1], data[i + 2]);
+      const min = Math.min(data[i], data[i + 1], data[i + 2]);
+
+      // 極端に暗い/明るい画素と高彩度画素は推定から外す
+      if (max < 24 || max > 245 || max - min > 95) continue;
+
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count++;
+    }
+
+    if (count < 50) return;
+
+    r /= count;
+    g /= count;
+    b /= count;
+
+    // Rが強くBが弱い＝黄/暖色寄り → tempを青方向にする
+    const temp = clampValue(Math.round((b - r) * 0.28), -28, 28);
+    const tint = clampValue(Math.round(((r + b) / 2 - g) * 0.18), -18, 18);
+
+    temperatureRange.value = temp;
+    tintRange.value = tint;
+    updateWhiteBalanceLabels();
+  } catch (error) {
+    console.warn('white balance estimate failed', error);
+  }
+}
+
+function applyWhiteBalanceToCanvas(ctx, width, height) {
+  const temp = Number(temperatureRange.value);
+  const tint = Number(tintRange.value);
+
+  if (!temp && !tint) return;
+
+  const image = ctx.getImageData(0, 0, width, height);
+  const data = image.data;
+
+  // temp: negative = cooler/bluer, positive = warmer/yellower
+  const rMul = 1 + temp / 180 - tint / 420;
+  const gMul = 1 - Math.abs(temp) / 700 - tint / 260;
+  const bMul = 1 - temp / 180 - tint / 420;
+
+  for (let i = 0; i < data.length; i += 4) {
+    data[i] = clampValue(data[i] * rMul, 0, 255);
+    data[i + 1] = clampValue(data[i + 1] * gMul, 0, 255);
+    data[i + 2] = clampValue(data[i + 2] * bMul, 0, 255);
+  }
+
+  ctx.putImageData(image, 0, 0);
+}
+
+function setPreviewFilter(brightness, contrast) {
+  previewBrightness = Math.round(clampValue(Number(brightness), 50, 150));
+  previewContrast = Math.round(clampValue(Number(contrast), 50, 150));
+
+  brightnessRange.value = previewBrightness;
+  contrastRange.value = previewContrast;
+  brightnessValue.textContent = `${previewBrightness}%`;
+  contrastValue.textContent = `${previewContrast}%`;
+
+  holder.style.setProperty('--preview-brightness', `${previewBrightness}%`);
+  holder.style.setProperty('--preview-contrast', `${previewContrast}%`);
+}
+
+function isBrightnessAuto() {
+  return brightnessMode.value === 'auto';
+}
+
+function isContrastAuto() {
+  return contrastMode.value === 'auto';
+}
+
+function updateAdjustmentControlState() {
+  brightnessRange.disabled = isBrightnessAuto();
+  contrastRange.disabled = isContrastAuto();
+
+  if (!isBrightnessAuto()) {
+    previewBrightness = Number(brightnessRange.value);
+  }
+
+  if (!isContrastAuto()) {
+    previewContrast = Number(contrastRange.value);
+  }
+
+  setPreviewFilter(previewBrightness, previewContrast);
+
+  if (cameraStream && shouldRunAutoAdjustment()) {
+    startAutoAdjustment();
+  } else if (!shouldRunAutoAdjustment()) {
+    stopAutoAdjustment();
+  }
+
+  saveSettings();
+}
+
+function updatePreviewFilter() {
+  if (!isBrightnessAuto()) {
+    previewBrightness = Number(brightnessRange.value);
+    presetBaseBrightness = previewBrightness;
+  }
+
+  if (!isContrastAuto()) {
+    previewContrast = Number(contrastRange.value);
+    presetBaseContrast = previewContrast;
+  }
+
+  setPreviewFilter(previewBrightness, previewContrast);
+  saveSettings();
+}
+
+function analyzeCurrentFrame(sampleSize = 64) {
+  if (!cameraStream || !cameraVideo.videoWidth || !autoAdjustCtx) return null;
+
+  autoAdjustCanvas.width = sampleSize;
+  autoAdjustCanvas.height = sampleSize;
+  autoAdjustCtx.drawImage(cameraVideo, 0, 0, sampleSize, sampleSize);
+
+  const pixels = autoAdjustCtx.getImageData(0, 0, sampleSize, sampleSize).data;
+
+  let sum = 0;
+  let sumSq = 0;
+  let count = 0;
+  let dark = 0;
+  let bright = 0;
+  let saturationSum = 0;
+
+  let colorR = 0;
+  let colorG = 0;
+  let colorB = 0;
+  let colorCount = 0;
+
+  for (let i = 0; i < pixels.length; i += 4) {
+    const r = pixels[i];
+    const g = pixels[i + 1];
+    const b = pixels[i + 2];
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    sum += luminance;
+    sumSq += luminance * luminance;
+    count += 1;
+
+    if (luminance < 45) dark += 1;
+    if (luminance > 220) bright += 1;
+    saturationSum += max - min;
+
+    // ホワイトバランス推定用。極端な黒/白と強い色の画素は除外。
+    if (max >= 24 && max <= 245 && max - min <= 105) {
+      colorR += r;
+      colorG += g;
+      colorB += b;
+      colorCount += 1;
+    }
+  }
+
+  if (!count) return null;
+
+  const mean = sum / count;
+  const variance = Math.max(0, sumSq / count - mean * mean);
+  const stdDev = Math.sqrt(variance);
+
+  const rMean = colorCount ? colorR / colorCount : 128;
+  const gMean = colorCount ? colorG / colorCount : 128;
+  const bMean = colorCount ? colorB / colorCount : 128;
+
+  return {
+    mean,
+    stdDev,
+    darkRatio: dark / count,
+    brightRatio: bright / count,
+    saturation: saturationSum / count,
+    rMean,
+    gMean,
+    bMean,
+    yellowBias: (rMean + gMean) / 2 - bMean,
+    redBias: rMean - (gMean + bMean) / 2,
+    greenBias: gMean - (rMean + bMean) / 2
+  };
+}
+
+function detectAiScene(metrics) {
+  const labels = [];
+  let brightness = 0;
+  let contrast = 0;
+  let temperature = 0;
+  let tint = 0;
+
+  if (metrics.brightRatio > 0.16 && metrics.darkRatio > 0.22) {
+    labels.push('逆光');
+    brightness += 12;
+    contrast -= 5;
+  } else if (metrics.mean < 55) {
+    labels.push('夜/暗め');
+    brightness += 18;
+    contrast += 8;
+    temperature -= 3;
+  } else if (metrics.mean < 90) {
+    labels.push('暗め');
+    brightness += 10;
+    contrast += 4;
+  } else if (metrics.mean > 190 || metrics.brightRatio > 0.22) {
+    labels.push('白飛び気味');
+    brightness -= 12;
+    contrast -= 3;
+  }
+
+  if (metrics.yellowBias > 12 || metrics.rMean - metrics.bMean > 18) {
+    labels.push('黄み強め');
+    temperature -= 12;
+  }
+
+  if (metrics.redBias > 16) {
+    labels.push('赤み強め');
+    temperature -= 5;
+    tint -= 5;
+  }
+
+  if (metrics.greenBias > 14) {
+    labels.push('緑かぶり');
+    tint += 8;
+  }
+
+  if (metrics.stdDev < 28) {
+    labels.push('コントラスト低め');
+    contrast += 9;
+  }
+
+  if (!labels.length) {
+    labels.push('標準');
+  }
+
+  return {
+    label: labels.slice(0, 3).join('・'),
+    brightness,
+    contrast,
+    temperature,
+    tint
+  };
+}
+
+function applyWhiteBalanceFromMetrics(metrics, aiCorrection) {
+  if (!isWhiteBalanceAuto() || !metrics) return;
+
+  const base = getAdjustmentBase();
+
+  if (isAiSceneOn()) {
+    // AI優先: プリセットの色温度/色かぶり補正を重ねない。
+    const sceneTemp = Math.round((metrics.bMean - metrics.rMean) * 0.24);
+    const sceneTint = Math.round(((metrics.rMean + metrics.bMean) / 2 - metrics.gMean) * 0.16);
+
+    const aiTemp = aiCorrection ? aiCorrection.temperature * 0.75 : 0;
+    const aiTint = aiCorrection ? aiCorrection.tint * 0.75 : 0;
+
+    temperatureRange.value = clampValue(base.temperature + sceneTemp + aiTemp, -45, 45);
+    tintRange.value = clampValue(base.tint + sceneTint + aiTint, -35, 35);
+  } else {
+    // AI OFF: プリセットをベースとして自動ホワイトバランスを弱めに加える。
+    const sceneTemp = Math.round((metrics.bMean - metrics.rMean) * 0.10);
+    const sceneTint = Math.round(((metrics.rMean + metrics.bMean) / 2 - metrics.gMean) * 0.08);
+
+    temperatureRange.value = clampValue(base.temperature + sceneTemp, -45, 45);
+    tintRange.value = clampValue(base.tint + sceneTint, -35, 35);
+  }
+
+  updateWhiteBalanceLabels();
+}
+
+function runAutoAdjustment() {
+  if (!cameraStream || !cameraVideo.videoWidth || !autoAdjustCtx) return;
+  if (!shouldRunAutoAdjustment()) return;
+
+  try {
+    const metrics = analyzeCurrentFrame(64);
+    if (!metrics) return;
+
+    const aiCorrection = isAiSceneOn()
+      ? detectAiScene(metrics)
+      : { label: 'OFF', brightness: 0, contrast: 0, temperature: 0, tint: 0 };
+
+    const base = getAdjustmentBase();
+
+    let baseBrightness;
+    let baseContrast;
+
+    if (isAiSceneOn()) {
+      // AI優先: プリセットの明るさ/コントラスト補正を重ねない。
+      baseBrightness = isBrightnessAuto()
+        ? clampValue(base.brightness + (128 - metrics.mean) * 0.45, 60, 145)
+        : previewBrightness;
+
+      baseContrast = isContrastAuto()
+        ? clampValue(base.contrast + (52 - metrics.stdDev) * 0.65, 70, 140)
+        : previewContrast;
+    } else {
+      // AI OFF: プリセットをベースにした従来の自動補正。
+      baseBrightness = isBrightnessAuto()
+        ? clampValue(base.brightness + (128 - metrics.mean) * 0.25, 65, 140)
+        : previewBrightness;
+
+      baseContrast = isContrastAuto()
+        ? clampValue(base.contrast + (52 - metrics.stdDev) * 0.35, 75, 135)
+        : previewContrast;
+    }
+
+    const aiStrength = isAiSceneOn() ? 0.85 : 0;
+    const nextBrightness = clampValue(baseBrightness + aiCorrection.brightness * aiStrength, 60, 145);
+    const nextContrast = clampValue(baseContrast + aiCorrection.contrast * aiStrength, 70, 140);
+
+    applyWhiteBalanceFromMetrics(metrics, isAiSceneOn() ? aiCorrection : null);
+
+    if (isAiSceneOn()) {
+      setAiSceneStatus(`判定: ${aiCorrection.label} / AI優先`);
+    } else {
+      setAiSceneStatus('OFF');
+    }
+
+    setPreviewFilter(nextBrightness, nextContrast);
+  } catch (error) {
+    console.warn('AI scene / auto adjustment failed', error);
+    setAiSceneStatus('判定失敗');
+  }
+}
+
+function startAutoAdjustment() {
+  if (autoAdjustTimer) return;
+  runAutoAdjustment();
+  autoAdjustTimer = setInterval(runAutoAdjustment, 500);
+}
+
+function stopAutoAdjustment() {
+  if (!autoAdjustTimer) return;
+  clearInterval(autoAdjustTimer);
+  autoAdjustTimer = null;
+}
+
+function getVideoTrack() {
+  if (!cameraStream) return null;
+  return cameraStream.getVideoTracks()[0] || null;
+}
+
+function setupCameraControls() {
+  cameraTrack = getVideoTrack();
+  cameraCapabilities = cameraTrack && cameraTrack.getCapabilities
+    ? cameraTrack.getCapabilities()
+    : {};
+
+  const notes = [];
+
+  if (cameraCapabilities.zoom) {
+    hardwareZoomSupported = true;
+
+    minZoom = cameraCapabilities.zoom.min ?? 1;
+    maxZoom = cameraCapabilities.zoom.max ?? 4;
+    zoomStep = cameraCapabilities.zoom.step ?? 0.1;
+
+    notes.push('ズーム: カメラ側対応');
+  } else {
+    hardwareZoomSupported = false;
+
+    minZoom = 1;
+    maxZoom = 4;
+    zoomStep = 0.1;
+
+    notes.push('ズーム: デジタルズーム');
+  }
+
+  const restoredZoom = Math.max(minZoom, Math.min(maxZoom, Number(currentZoom) || minZoom));
+  currentZoom = restoredZoom;
+  zoomRange.min = minZoom;
+  zoomRange.max = maxZoom;
+  zoomRange.step = zoomStep;
+  zoomRange.value = currentZoom;
+  zoomRange.disabled = false;
+  zoomValue.textContent = `${currentZoom.toFixed(1)}x`;
+  holder.style.setProperty('--digital-zoom', hardwareZoomSupported ? '1' : String(currentZoom));
+
+  if (btnZoomOut) btnZoomOut.disabled = false;
+  if (btnZoomIn) btnZoomIn.disabled = false;
+  if (btnZoomReset) btnZoomReset.disabled = false;
+
+  // カメラ再起動後も前回の倍率を復元する
+  applyZoom(currentZoom);
+
+  if (cameraCapabilities.focusMode && cameraCapabilities.focusMode.length) {
+    focusModeSelect.innerHTML = '';
+    cameraCapabilities.focusMode.forEach(mode => {
+      const option = document.createElement('option');
+      option.value = mode;
+      option.textContent =
+        mode === 'continuous' ? '自動' :
+        mode === 'single-shot' ? '一回だけAF' :
+        mode === 'manual' ? '手動' :
+        mode;
+      focusModeSelect.appendChild(option);
+    });
+
+    const preferredFocusMode = cameraCapabilities.focusMode.includes('continuous')
+      ? 'continuous'
+      : cameraCapabilities.focusMode.includes('single-shot')
+        ? 'single-shot'
+        : cameraCapabilities.focusMode[0];
+
+    focusModeSelect.value = preferredFocusMode;
+    focusModeSelect.disabled = false;
+    btnRefocus.disabled = false;
+    focusRange.disabled = !(preferredFocusMode === 'manual' && cameraCapabilities.focusDistance);
+    applyFocusMode(preferredFocusMode, true);
+
+    notes.push(preferredFocusMode === 'continuous' ? 'フォーカス: 自動' : 'フォーカス: 対応');
+  } else {
+    focusModeSelect.disabled = true;
+    btnRefocus.disabled = true;
+    focusRange.disabled = true;
+    notes.push('フォーカス: 非対応または自動のみ');
+  }
+
+  if (cameraCapabilities.focusDistance) {
+    const cap = cameraCapabilities.focusDistance;
+    focusRange.min = cap.min ?? 0;
+    focusRange.max = cap.max ?? 1;
+    focusRange.step = cap.step || 0.01;
+  } else {
+    focusRange.disabled = true;
+  }
+
+  if (cameraCapabilities.exposureCompensation) {
+    const cap = cameraCapabilities.exposureCompensation;
+    exposureRange.min = cap.min;
+    exposureRange.max = cap.max;
+    exposureRange.step = cap.step || 0.1;
+    exposureRange.value = 0;
+    exposureRange.disabled = false;
+    exposureValue.textContent = '0';
+    notes.push('露出補正: 対応');
+  } else {
+    exposureRange.disabled = true;
+    exposureValue.textContent = '非対応';
+    notes.push('露出補正: 非対応');
+  }
+
+  notes.push(levelGuideStatus);
+  notes.push('ホワイトバランス: ' + (isWhiteBalanceAuto() ? '自動' : '手動'));
+  cameraSupportNote.textContent = notes.join(' / ');
+}
+
+async function applyZoom(value) {
+  let zoom = Number(value);
+  if (!Number.isFinite(zoom)) zoom = minZoom;
+
+  zoom = Math.max(minZoom, Math.min(maxZoom, zoom));
+  currentZoom = zoom;
+
+  zoomRange.value = zoom;
+  zoomValue.textContent = `${zoom.toFixed(1)}x`;
+
+  // カメラ側ズーム対応時は映像自体がズームされるので、CSS拡大は重ねない。
+  // 非対応時だけプレビューと保存画像でデジタルズームする。
+  holder.style.setProperty('--digital-zoom', hardwareZoomSupported ? '1' : zoom);
+  saveSettings();
+
+  if (!cameraTrack || !hardwareZoomSupported) return;
+
+  try {
+    await cameraTrack.applyConstraints({
+      advanced: [{ zoom }]
+    });
+  } catch (error) {
+    console.warn('hardware zoom failed, using digital zoom', error);
+    hardwareZoomSupported = false;
+    holder.style.setProperty('--digital-zoom', zoom);
+  }
+}
+
+async function applyFocusMode(mode, silent = false) {
+  if (!cameraTrack) return;
+
+  try {
+    await cameraTrack.applyConstraints({
+      advanced: [{ focusMode: mode }]
+    });
+
+    focusRange.disabled = !(mode === 'manual' && cameraCapabilities.focusDistance);
+  } catch (error) {
+    console.warn('focus mode failed', error);
+    if (!silent) {
+      alert('この端末/ブラウザではフォーカス制御に対応していない可能性があります。');
+    }
+  }
+}
+
+async function applyFocusDistance(value) {
+  if (!cameraTrack || !cameraCapabilities.focusDistance) return;
+
+  try {
+    await cameraTrack.applyConstraints({
+      advanced: [{
+        focusMode: 'manual',
+        focusDistance: Number(value)
+      }]
+    });
+  } catch (error) {
+    console.warn('manual focus failed', error);
+  }
+}
+
+async function refocus() {
+  if (!cameraTrack) return;
+
+  try {
+    if (cameraCapabilities.focusMode && cameraCapabilities.focusMode.includes('single-shot')) {
+      await cameraTrack.applyConstraints({ advanced: [{ focusMode: 'single-shot' }] });
+    } else if (cameraCapabilities.focusMode && cameraCapabilities.focusMode.includes('continuous')) {
+      await cameraTrack.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+    } else {
+      alert('この端末/ブラウザではフォーカス再調整に対応していない可能性があります。');
+    }
+  } catch (error) {
+    console.warn('refocus failed', error);
+    alert('フォーカス再調整に失敗しました。');
+  }
+}
+
+async function applyExposureCompensation(value) {
+  if (!cameraTrack || !cameraCapabilities.exposureCompensation) return;
+
+  const exposure = Number(value);
+  exposureValue.textContent = exposure.toFixed(2);
+
+  try {
+    await cameraTrack.applyConstraints({
+      advanced: [{ exposureCompensation: exposure }]
+    });
+  } catch (error) {
+    console.warn('exposure compensation failed', error);
+    exposureValue.textContent = '失敗';
+  }
+}
+
+function showFocusMarker(x, y) {
+  focusMarker.style.left = `${x}px`;
+  focusMarker.style.top = `${y}px`;
+
+  focusMarker.classList.remove('show');
+  void focusMarker.offsetWidth;
+  focusMarker.classList.add('show');
+}
+
+async function refocusAtPoint(x, y) {
+  showFocusMarker(x, y);
+  await refocus();
+}
+
+function normalizeDeg(deg) {
+  let value = ((deg + 180) % 360 + 360) % 360 - 180;
+  if (value === -180) value = 180;
+  return value;
+}
+
+function nearestRightAngleDelta(deg) {
+  const nearest = Math.round(deg / 90) * 90;
+  return normalizeDeg(deg - nearest);
+}
+
+function getScreenAngle() {
+  if (screen.orientation && typeof screen.orientation.angle === 'number') {
+    return screen.orientation.angle;
+  }
+  return typeof window.orientation === 'number' ? window.orientation : 0;
+}
+
+function clamp(value, min, max) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function getLevelFromMotion(event) {
+  const acc = event.accelerationIncludingGravity;
+  if (!acc) return null;
+
+  const x = Number(acc.x);
+  const y = Number(acc.y);
+  const z = Number(acc.z);
+
+  if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return null;
+
+  const planeStrength = Math.hypot(x, y);
+  const gravityStrength = Math.hypot(x, y, z);
+  if (gravityStrength < 4) return null;
+
+  // roll: 画面内の左右回転。縦持ち/横持ち/逆向きでも、最も近い90度軸からのズレだけを見る。
+  let roll = 0;
+  if (planeStrength >= 1.2) {
+    const rawRoll = Math.atan2(x, y) * 180 / Math.PI;
+    roll = nearestRightAngleDelta(rawRoll);
+  }
+
+  // pitch: スマホを手前/奥へ倒した量。
+  // カメラを正面に向けた垂直状態では z がほぼ0、倒すほど z が大きくなる。
+  const pitch = Math.atan2(z, planeStrength) * 180 / Math.PI;
+
+  return { roll, pitch };
+}
+
+function getLevelFromOrientation(event) {
+  const beta = typeof event.beta === 'number' ? event.beta : null;
+  const gamma = typeof event.gamma === 'number' ? event.gamma : null;
+  const rawAngle = getScreenAngle();
+  const screenAngle = ((rawAngle % 360) + 360) % 360;
+
+  let roll = 0;
+  let pitch = 0;
+
+  // fallback 用。DeviceMotion が取れないブラウザ向け。
+  // 縦向きでは gamma が左右回転、beta の90度基準差が手前/奥。
+  // 横向きでは beta が左右回転、gamma の90度基準差が手前/奥に近い。
+  if (screenAngle === 90) {
+    if (beta !== null) roll = normalizeDeg(beta - 90);
+    if (gamma !== null) pitch = nearestRightAngleDelta(gamma);
+  } else if (screenAngle === 270) {
+    if (beta !== null) roll = normalizeDeg(beta + 90);
+    if (gamma !== null) pitch = nearestRightAngleDelta(gamma);
+  } else if (screenAngle === 180) {
+    if (gamma !== null) roll = normalizeDeg(-gamma);
+    if (beta !== null) pitch = nearestRightAngleDelta(beta);
+  } else {
+    if (gamma !== null) roll = normalizeDeg(gamma);
+    if (beta !== null) pitch = nearestRightAngleDelta(beta);
+  }
+
+  return { roll, pitch };
+}
+
+function updateLevelGuide(level) {
+  if (!levelCross || !level || !Number.isFinite(level.roll) || !Number.isFinite(level.pitch)) return;
+
+  const roll = normalizeDeg(level.roll);
+  const pitch = clamp(level.pitch, -60, 60);
+
+  lastLevelRoll = roll;
+
+  // 十字全体は左右回転に反応させる。
+  holder.style.setProperty('--level-roll-angle', `${-clamp(roll, -75, 75)}deg`);
+
+  // 垂直確認は手前/奥方向の傾きを、中央の丸が上下に動くことで表示する。
+  // 正面を向いて垂直に近いほど中央へ戻る。
+  const pitchOffset = clamp(pitch * 1.45, -70, 70);
+  holder.style.setProperty('--level-pitch-offset', `${pitchOffset}px`);
+
+  const rollOK = Math.abs(roll) < 2.0;
+  const pitchOK = Math.abs(pitch) < 3.0;
+
+  levelCross.classList.toggle('roll-ok', rollOK);
+  levelCross.classList.toggle('pitch-ok', pitchOK);
+  levelCross.classList.toggle('level-ok', rollOK && pitchOK);
+}
+
+function handleDeviceMotion(event) {
+  const level = getLevelFromMotion(event);
+  if (level === null) return;
+
+  lastMotionLevelAt = Date.now();
+  updateLevelGuide(level);
+}
+
+function handleDeviceOrientation(event) {
+  // DeviceMotion の方が手前/奥の傾きも安定するので、取れている間は fallback を使わない。
+  if (Date.now() - lastMotionLevelAt < 1000) return;
+  updateLevelGuide(getLevelFromOrientation(event));
+}
+
+async function requestSensorPermissionIfNeeded(EventClass) {
+  if (EventClass && typeof EventClass.requestPermission === 'function') {
+    const permission = await EventClass.requestPermission();
+    return permission === 'granted';
+  }
+  return true;
+}
+
+async function enableLevelGuide() {
+  let motionOK = false;
+  let orientationOK = false;
+
+  try {
+    if (window.DeviceMotionEvent) {
+      motionOK = await requestSensorPermissionIfNeeded(DeviceMotionEvent);
+      if (motionOK && !levelMotionActive) {
+        window.addEventListener('devicemotion', handleDeviceMotion, true);
+        levelMotionActive = true;
+      }
+    }
+  } catch (error) {
+    console.warn('device motion failed', error);
+  }
+
+  try {
+    if (window.DeviceOrientationEvent) {
+      orientationOK = await requestSensorPermissionIfNeeded(DeviceOrientationEvent);
+      if (orientationOK && !levelOrientationActive) {
+        window.addEventListener('deviceorientation', handleDeviceOrientation, true);
+        levelOrientationActive = true;
+      }
+    }
+  } catch (error) {
+    console.warn('device orientation failed', error);
+  }
+
+  levelGuideActive = levelMotionActive || levelOrientationActive;
+
+  if (levelMotionActive) {
+    levelGuideStatus = '水準器: 傾き対応';
+  } else if (levelOrientationActive) {
+    levelGuideStatus = '水準器: 簡易傾き対応';
+  } else {
+    levelGuideStatus = '水準器: 固定表示';
+  }
+}
+
+async function startCamera() {
+  try {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      alert('このブラウザではカメラ機能が使えません。');
+      return;
+    }
+
+    if (cameraStream) {
+      stopCamera();
+    }
+
+    await enableLevelGuide();
+    applyPreviewAspect();
+    const { ratio } = getAspectRatioParts();
+
+    try {
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' },
+          width: { ideal: OUTPUT_SIZE },
+          height: { ideal: OUTPUT_SIZE },
+          aspectRatio: { ideal: ratio }
+        },
+        audio: false
+      });
+    } catch (firstError) {
+      console.warn('high resolution camera request failed, retrying default camera', firstError);
+      cameraStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: 'environment' }
+        },
+        audio: false
+      });
+    }
+
+    cameraVideo.srcObject = cameraStream;
+    await cameraVideo.play();
+
+    holder.classList.add('camera-on');
+    setupCameraControls();
+    updateWhiteBalanceControlState();
+    updateGuideOpacity();
+    updateAdjustmentControlState();
+    if (isAiSceneOn()) {
+      setAiSceneStatus('AI優先で判定中...');
+    } else {
+      setAiSceneStatus('OFF');
+    }
+
+    btnCamera.textContent = '■ カメラ停止';
+    btnShot.disabled = false;
+  } catch (error) {
+    console.error(error);
+    alert('カメラを起動できませんでした: ' + (error.message || error.name || error));
+  }
+}
+
+function stopCamera() {
+  stopAutoAdjustment();
+
+  if (cameraStream) {
+    cameraStream.getTracks().forEach(track => track.stop());
+    cameraStream = null;
+  }
+
+  cameraTrack = null;
+  cameraCapabilities = {};
+
+  cameraVideo.srcObject = null;
+  holder.classList.remove('camera-on');
+
+  btnCamera.textContent = '📷 カメラ起動';
+  btnShot.disabled = true;
+  zoomRange.disabled = true;
+  if (btnZoomOut) btnZoomOut.disabled = true;
+  if (btnZoomIn) btnZoomIn.disabled = true;
+  if (btnZoomReset) btnZoomReset.disabled = true;
+  holder.style.setProperty('--digital-zoom', '1');
+  holder.style.setProperty('--level-roll-angle', '0deg');
+  holder.style.setProperty('--level-pitch-offset', '0px');
+  lastMotionLevelAt = 0;
+  lastLevelRoll = 0;
+  if (levelCross) {
+    levelCross.classList.remove('roll-ok', 'pitch-ok', 'level-ok');
+  }
+  focusModeSelect.disabled = true;
+  focusRange.disabled = true;
+  btnRefocus.disabled = true;
+  exposureRange.disabled = true;
+  exposureValue.textContent = '非対応';
+  setAiSceneStatus(isAiSceneOn() ? '待機中' : 'OFF');
+}
+
+function drawVideoCover(ctx, video, w, h) {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+
+  if (!vw || !vh) {
+    throw new Error('カメラ映像の読み込みが完了していません。');
+  }
+
+  const videoRatio = vw / vh;
+  const canvasRatio = w / h;
+
+  let sx = 0;
+  let sy = 0;
+  let sw = vw;
+  let sh = vh;
+
+  if (videoRatio > canvasRatio) {
+    sw = vh * canvasRatio;
+    sx = (vw - sw) / 2;
+  } else {
+    sh = vw / canvasRatio;
+    sy = (vh - sh) / 2;
+  }
+
+  const digitalZoom = hardwareZoomSupported ? 1 : Math.max(1, currentZoom || 1);
+  const zoomedSw = sw / digitalZoom;
+  const zoomedSh = sh / digitalZoom;
+  sx += (sw - zoomedSw) / 2;
+  sy += (sh - zoomedSh) / 2;
+  sw = zoomedSw;
+  sh = zoomedSh;
+
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, w, h);
+}
+
+function captureFromCamera() {
+  try {
+    if (!cameraStream || !cameraVideo.videoWidth) {
+      alert('カメラ映像がまだ準備できていません。');
+      return;
+    }
+
+    const output = getOutputSizeByAspect();
+    const w = output.width;
+    const h = output.height;
+
+    captureCanvas.width = w;
+    captureCanvas.height = h;
+
+    if (isAiSceneOn()) {
+      runAutoAdjustment();
+    } else if (isWhiteBalanceAuto()) {
+      estimateWhiteBalanceFromVideo();
+    }
+
+    const ctx = captureCanvas.getContext('2d');
+    ctx.filter = `brightness(${previewBrightness}%) contrast(${previewContrast}%)`;
+    drawVideoCover(ctx, cameraVideo, w, h);
+    ctx.filter = 'none';
+    applyWhiteBalanceToCanvas(ctx, w, h);
+
+    const src = captureCanvas.toDataURL('image/jpeg', 0.95);
+
+    imgs.push({ src });
+    current = imgs.length - 1;
+    lastCameraShotIndex = current;
+
+    btnSave.disabled = false;
+    // 連続撮影できるように、撮影後もカメラは止めない。
+    render();
+    holder.classList.add('camera-on');
+    btnShot.disabled = false;
+
+  } catch (error) {
+    console.error(error);
+    alert('撮影に失敗しました: ' + (error.message || error));
+  }
+}
+
+
+function deleteCurrentImage() {
+  if (!imgs.length) return;
+
+  imgs.splice(current, 1);
+  current = Math.max(0, Math.min(current, imgs.length - 1));
+  render();
+}
+
+function clearAllImages() {
+  if (!imgs.length) return;
+  if (!confirm('撮影/追加した画像をすべて削除しますか？')) return;
+
+  imgs = [];
+  current = 0;
+  render();
+}
+
+function toggleShootingMode() {
+  const entering = !document.body.classList.contains('shooting-mode');
+
+  document.body.classList.toggle('shooting-mode', entering);
+  btnShootingMode.textContent = entering ? '通常表示に戻る' : '撮影モード';
+
+  if (entering && document.documentElement.requestFullscreen) {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+
+  if (!entering && document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => {});
+  }
+}
+
+function dataURLToBlob(dataURL) {
+  const parts = dataURL.split(',');
+  const mimeMatch = parts[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  const binary = atob(parts[1]);
+  const length = binary.length;
+  const array = new Uint8Array(length);
+
+  for (let i = 0; i < length; i++) {
+    array[i] = binary.charCodeAt(i);
+  }
+
+  return new Blob([array], { type: mime });
+}
+
+function makeImageFilename(index = current) {
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const number = Number.isFinite(index) && index >= 0 ? `-${String(index + 1).padStart(2, '0')}` : '';
+  return `pokestop-postcard${number}-${stamp}.jpg`;
+}
+
+function downloadImageBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+async function saveImageByIndex(index, options = {}) {
+  if (index < 0 || !imgs[index] || !imgs[index].src) {
+    if (!options.silent) alert('保存する画像がありません。先に撮影してください。');
+    return false;
+  }
+
+  const blob = dataURLToBlob(imgs[index].src);
+  const filename = makeImageFilename(index);
+  const file = new File([blob], filename, { type: 'image/jpeg' });
+
+  if (options.share && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({
+        files: [file],
+        title: 'ポストカード画像'
+      });
+      return true;
+    } catch (error) {
+      console.log('共有がキャンセルまたは失敗しました', error);
+      if (options.shareOnly) return false;
+    }
+  }
+
+  downloadImageBlob(blob, filename);
+  return true;
+}
+
+function handleAutoSave(index) {
+  if (!autoSaveMode || autoSaveMode.value === 'off') return;
+
+  if (autoSaveMode.value === 'download') {
+    saveImageByIndex(index, { silent: true, share: false });
+  }
+
+  if (autoSaveMode.value === 'share') {
+    saveImageByIndex(index, { silent: true, share: true, shareOnly: true });
+  }
+}
+
+async function saveAllImages() {
+  if (!imgs.length) {
+    alert('保存する画像がありません。');
+    return;
+  }
+
+  for (let i = 0; i < imgs.length; i++) {
+    await saveImageByIndex(i, { silent: true, share: false });
+    await new Promise(resolve => setTimeout(resolve, 180));
+  }
+}
+
+async function saveCurrentImage() {
+  await saveImageByIndex(current, { share: true });
+}
+
+btnDisk.addEventListener('click', () => setMode('disk'));
+btnGift.addEventListener('click', () => setMode('gift'));
+if (btnDiskShooting) btnDiskShooting.addEventListener('click', () => setMode('disk'));
+if (btnGiftShooting) btnGiftShooting.addEventListener('click', () => setMode('gift'));
+if (btnDiskDetails) btnDiskDetails.addEventListener('click', () => setMode('disk'));
+if (btnGiftDetails) btnGiftDetails.addEventListener('click', () => setMode('gift'));
+
+btnGrid.addEventListener('click', () => {
+  gridState = (gridState + 1) % 3;
+  grid3x3.className = 'grid-overlay' + (gridState === 1 ? ' grid-3x3' : '');
+  gridCenter.className = 'grid-overlay' + (gridState === 2 ? ' grid-center' : '');
+  btnGrid.classList.toggle('active', gridState !== 0);
+});
+
+fileInput.addEventListener('change', event => load(event.target.files));
+
+const preventDefault = event => event.preventDefault();
+['dragover', 'drop'].forEach(eventName => {
+  stage.addEventListener(eventName, preventDefault);
+  dropzone.addEventListener(eventName, preventDefault);
+});
+
+stage.addEventListener('dragenter', () => stage.classList.add('drag-over'));
+stage.addEventListener('dragleave', () => stage.classList.remove('drag-over'));
+stage.addEventListener('drop', event => {
+  stage.classList.remove('drag-over');
+  load(event.dataTransfer.files);
+});
+
+btnPrev.addEventListener('click', () => go(-1));
+btnNext.addEventListener('click', () => go(1));
+
+document.addEventListener('keydown', event => {
+  if (event.key === 'ArrowLeft') go(-1);
+  if (event.key === 'ArrowRight') go(1);
+});
+
+let startX = 0;
+stage.addEventListener('touchstart', event => {
+  startX = event.touches[0].clientX;
+});
+stage.addEventListener('touchend', event => {
+  const diff = event.changedTouches[0].clientX - startX;
+  if (Math.abs(diff) > 50) go(diff > 0 ? -1 : 1);
+});
+
+aspectSelect.addEventListener('change', () => {
+  applyPreviewAspect();
+  saveSettings();
+});
+
+brightnessMode.addEventListener('change', updateAdjustmentControlState);
+contrastMode.addEventListener('change', updateAdjustmentControlState);
+brightnessRange.addEventListener('input', updatePreviewFilter);
+contrastRange.addEventListener('input', updatePreviewFilter);
+
+whiteBalanceMode.addEventListener('change', updateWhiteBalanceControlState);
+temperatureRange.addEventListener('input', () => {
+  updateWhiteBalanceLabels();
+  saveSettings();
+});
+tintRange.addEventListener('input', () => {
+  updateWhiteBalanceLabels();
+  saveSettings();
+});
+guideOpacityRange.addEventListener('input', updateGuideOpacity);
+
+if (aiSceneMode) {
+  aiSceneMode.addEventListener('change', () => {
+    saveSettings();
+    if (isAiSceneOn()) {
+      setAiSceneStatus('AI優先で待機中');
+      if (cameraStream) startAutoAdjustment();
+    } else {
+      setAiSceneStatus('OFF');
+      if (cameraStream && !shouldRunAutoAdjustment()) stopAutoAdjustment();
+    }
+  });
+}
+
+if (btnApplyPreset) {
+  btnApplyPreset.addEventListener('click', () => applyPreset(presetSelect.value));
+}
+
+zoomRange.addEventListener('input', () => applyZoom(zoomRange.value));
+if (btnZoomOut) {
+  btnZoomOut.addEventListener('click', () => applyZoom(currentZoom - zoomStep));
+}
+if (btnZoomIn) {
+  btnZoomIn.addEventListener('click', () => applyZoom(currentZoom + zoomStep));
+}
+if (btnZoomReset) {
+  btnZoomReset.addEventListener('click', () => applyZoom(minZoom));
+}
+focusModeSelect.addEventListener('change', () => applyFocusMode(focusModeSelect.value));
+focusRange.addEventListener('input', () => applyFocusDistance(focusRange.value));
+btnRefocus.addEventListener('click', refocus);
+exposureRange.addEventListener('input', () => applyExposureCompensation(exposureRange.value));
+
+holder.addEventListener('click', event => {
+  if (!cameraStream) return;
+
+  const rect = holder.getBoundingClientRect();
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+  refocusAtPoint(x, y);
+});
+
+btnCamera.addEventListener('click', () => {
+  if (cameraStream) {
+    stopCamera();
+  } else {
+    startCamera();
+  }
+});
+
+btnShot.addEventListener('click', captureFromCamera);
+btnSave.addEventListener('click', saveCurrentImage);
+btnDeleteCurrent.addEventListener('click', deleteCurrentImage);
+btnClearAll.addEventListener('click', clearAllImages);
+btnSaveAll.addEventListener('click', saveAllImages);
+if (btnClearAllShooting) btnClearAllShooting.addEventListener('click', clearAllImages);
+if (btnSaveAllShooting) btnSaveAllShooting.addEventListener('click', saveAllImages);
+btnShootingMode.addEventListener('click', toggleShootingMode);
+btnResetSettings.addEventListener('click', resetSettings);
+
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && document.body.classList.contains('shooting-mode')) {
+    document.body.classList.remove('shooting-mode');
+    btnShootingMode.textContent = '撮影モード';
+  }
+});
+
+loadSettings();
+applySimpleCameraDefaults();
+syncPresetBaseFromControls();
+applyPreviewAspect();
+updateWhiteBalanceControlState();
+updateGuideOpacity();
+updateAdjustmentControlState();
+render();
 </script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js')
+        .then(() => console.log('Service Worker registered'))
+        .catch(err => console.warn('Service Worker registration failed', err));
+    });
+  }
+</script>
+
 </body>
 </html>
