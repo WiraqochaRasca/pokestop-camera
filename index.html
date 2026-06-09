@@ -993,6 +993,8 @@
         <summary>画像管理</summary>
         <div class="image-management">
           <button class="camera-btn" id="btn-save" type="button" disabled>選択画像を保存/共有</button>
+          <button class="camera-btn" id="btn-rotate-left" type="button" disabled>左回転</button>
+          <button class="camera-btn" id="btn-rotate-right" type="button" disabled>右回転</button>
           <button class="camera-btn" id="btn-delete-current" type="button" disabled>選択画像を削除</button>
           <button class="camera-btn" id="btn-save-all" type="button" disabled>全保存</button>
           <button class="camera-btn" id="btn-clear-all" type="button" disabled>全削除</button>
@@ -1089,7 +1091,7 @@
 
       <div class="footer">
         <span>PC: 矢印キーで切替 / スマホ: スワイプ</span>
-        <span>v1.21-image-management</span>
+        <span>v1.24-shooting-mode-fix-rotate-safe</span>
       </div>
     </div>
   </div>
@@ -1226,6 +1228,8 @@ const cameraVideo = document.getElementById('cameraVideo');
 const btnCamera = document.getElementById('btn-camera');
 const btnShot = document.getElementById('btn-shot');
 const btnSave = document.getElementById('btn-save');
+const btnRotateLeft = document.getElementById('btn-rotate-left');
+const btnRotateRight = document.getElementById('btn-rotate-right');
 const btnShootingMode = document.getElementById('btn-shooting-mode');
 const btnResetSettings = document.getElementById('btn-reset-settings');
 const btnDeleteCurrent = document.getElementById('btn-delete-current');
@@ -1321,6 +1325,8 @@ function render() {
     btnPrev.disabled = true;
     btnNext.disabled = true;
     btnSave.disabled = true;
+    if (btnRotateLeft) btnRotateLeft.disabled = true;
+    if (btnRotateRight) btnRotateRight.disabled = true;
     if (btnDeleteCurrent) btnDeleteCurrent.disabled = true;
     if (btnClearAll) btnClearAll.disabled = true;
     if (btnSaveAll) btnSaveAll.disabled = true;
@@ -1363,6 +1369,8 @@ function render() {
   btnPrev.disabled = current === 0;
   btnNext.disabled = current === imgs.length - 1;
   btnSave.disabled = false;
+  if (btnRotateLeft) btnRotateLeft.disabled = false;
+  if (btnRotateRight) btnRotateRight.disabled = false;
   if (btnDeleteCurrent) btnDeleteCurrent.disabled = imgs.length === 0;
   if (btnClearAll) btnClearAll.disabled = imgs.length === 0;
   if (btnSaveAll) btnSaveAll.disabled = imgs.length === 0;
@@ -2526,6 +2534,57 @@ function captureFromCamera() {
 }
 
 
+function rotateCurrentImage(direction) {
+  if (!imgs.length || !imgs[current] || !imgs[current].src) return;
+
+  const source = imgs[current].src;
+  const image = new Image();
+
+  image.onload = () => {
+    try {
+      const sourceWidth = image.naturalWidth || image.width;
+      const sourceHeight = image.naturalHeight || image.height;
+
+      if (!sourceWidth || !sourceHeight) {
+        alert('画像の読み込みに失敗しました。');
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = sourceHeight;
+      canvas.height = sourceWidth;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        alert('画像を回転できませんでした。');
+        return;
+      }
+
+      if (direction === 'left') {
+        ctx.translate(0, sourceWidth);
+        ctx.rotate(-Math.PI / 2);
+      } else {
+        ctx.translate(sourceHeight, 0);
+        ctx.rotate(Math.PI / 2);
+      }
+
+      ctx.drawImage(image, 0, 0, sourceWidth, sourceHeight);
+      imgs[current].src = canvas.toDataURL('image/jpeg', 0.95);
+      render();
+    } catch (error) {
+      console.error(error);
+      alert('画像の回転に失敗しました: ' + (error.message || error));
+    }
+  };
+
+  image.onerror = () => {
+    alert('画像の読み込みに失敗しました。');
+  };
+
+  image.src = source;
+}
+
+
 function deleteCurrentImage() {
   if (!imgs.length) return;
 
@@ -2534,13 +2593,21 @@ function deleteCurrentImage() {
   render();
 }
 
-function clearAllImages() {
+function clearAllImages(options = {}) {
   if (!imgs.length) return;
   if (!confirm('撮影/追加した画像をすべて削除しますか？')) return;
+
+  const keepShootingMode = !!options.keepShootingMode;
 
   imgs = [];
   current = 0;
   render();
+
+  if (keepShootingMode) {
+    document.body.classList.add('shooting-mode');
+    btnShootingMode.textContent = '通常表示に戻る';
+    setMode('gift');
+  }
 }
 
 function toggleShootingMode() {
@@ -2548,6 +2615,10 @@ function toggleShootingMode() {
 
   document.body.classList.toggle('shooting-mode', entering);
   btnShootingMode.textContent = entering ? '通常表示に戻る' : '撮影モード';
+
+  if (entering) {
+    setMode('gift');
+  }
 
   if (entering && document.documentElement.requestFullscreen) {
     document.documentElement.requestFullscreen().catch(() => {});
@@ -2764,10 +2835,24 @@ btnCamera.addEventListener('click', () => {
 
 btnShot.addEventListener('click', captureFromCamera);
 btnSave.addEventListener('click', saveCurrentImage);
+if (btnRotateLeft) btnRotateLeft.addEventListener('click', () => rotateCurrentImage('left'));
+if (btnRotateRight) btnRotateRight.addEventListener('click', () => rotateCurrentImage('right'));
 btnDeleteCurrent.addEventListener('click', deleteCurrentImage);
 btnClearAll.addEventListener('click', clearAllImages);
 btnSaveAll.addEventListener('click', saveAllImages);
-if (btnClearAllShooting) btnClearAllShooting.addEventListener('click', clearAllImages);
+if (btnClearAllShooting) {
+  btnClearAllShooting.addEventListener('click', () => {
+    const wasShootingMode = document.body.classList.contains('shooting-mode');
+    clearAllImages({ keepShootingMode: wasShootingMode });
+    setTimeout(() => {
+      if (wasShootingMode) {
+        document.body.classList.add('shooting-mode');
+        btnShootingMode.textContent = '通常表示に戻る';
+        setMode('gift');
+      }
+    }, 0);
+  });
+}
 if (btnSaveAllShooting) btnSaveAllShooting.addEventListener('click', saveAllImages);
 btnShootingMode.addEventListener('click', toggleShootingMode);
 btnResetSettings.addEventListener('click', resetSettings);
